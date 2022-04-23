@@ -18,7 +18,7 @@ class Sort:
         self.root: xusun.Znum = root
 
     @staticmethod
-    def main_solver(znum1, znum2):
+    def solver_main(znum1, znum2):
         (normA1, normA2) = Sort.normalization(znum1.A, znum2.A)
 
         intermediateA = Sort.get_intermediate(normA1, normA2)
