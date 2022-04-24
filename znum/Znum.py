@@ -4,6 +4,7 @@ from numpy import linalg, array
 from znum.Math import Math
 from znum.Sort import Sort
 from znum.Beast import Beast
+from znum.Promethee import Promethee
 
 
 class Znum:
@@ -17,6 +18,7 @@ class Znum:
         self.math = Math(self)
         self.sort = Sort(self)
         self.beast = Beast(self)
+        self.promethee = Promethee(self)
 
     def __str__(self):
         return f"Znum(A={self.A}, B={self.B})"

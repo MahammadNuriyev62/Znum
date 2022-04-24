@@ -40,8 +40,8 @@ class Beast:
         weights, extra, main, types = table[0], table[1], table[2: -1], table[-1]
 
         weights_modified = Beast.parse_znums_from_row(weights[1:])
-        main_modified = tuple(Beast.parse_znums_from_row(row[1:]) for row in main)
-        types_modified = tuple(t for t in types[1:] if t)
+        main_modified = [Beast.parse_znums_from_row(row[1:]) for row in main]
+        types_modified = [t for t in types[1:] if t]
         return [weights_modified, *main_modified, types_modified]
 
     @staticmethod
@@ -52,7 +52,7 @@ class Beast:
             index = int(Beast.ZNUM_SIZE / 2)
             znum = Znum(A=znumAsList[:index], B=znumAsList[index:])
             row_modified.append(znum)
-        return tuple(row_modified)
+        return row_modified
 
     @staticmethod
     def save_znums_as_one_column_grouped_by_criteria(table):

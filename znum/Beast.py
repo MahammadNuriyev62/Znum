@@ -1,3 +1,5 @@
+from pprint import pprint
+
 import znum.Znum as xusun
 
 
@@ -16,7 +18,7 @@ class Beast:
         self.root: xusun.Znum = root
 
     @staticmethod
-    def solver_main(table: tuple[(str, (str, tuple))], shouldNormalizeWeight=True):
+    def solver_main(table: list[list], shouldNormalizeWeight=False):
         """
         table[0] -> weights
         table[1:-1] -> main part
@@ -25,21 +27,21 @@ class Beast:
         :param table:
         :return:
         """
-        table = list(table)
-        main_table_part = table[1:-1]
-        criteria_types = table[-1]
+        weights: list[xusun.Znum] = table[0]
+        main_table_part: list[list[xusun.Znum]] = table[1:-1]
+        criteria_types: list[str] = table[-1]
         main_table_part_transpose = tuple(zip(*main_table_part))
         for column_number, column in enumerate(main_table_part_transpose):
             Beast.normalize(column, criteria_types[column_number])
 
         if shouldNormalizeWeight:
-            table[0] = Beast.normalize_weight(table[0])
+            Beast.normalize_weight(weights)
 
-        Beast.weightage(table)
 
-        table_1 = Beast.get_table_n(table, 1)
-        table_0 = Beast.get_table_n(table, 0)
+        Beast.weightage(main_table_part, weights)
 
+        table_1 = Beast.get_table_n(main_table_part, 1)
+        table_0 = Beast.get_table_n(main_table_part, 0)
 
         s_best = Beast.find_extremum(table_1)
         s_worst = Beast.find_extremum(table_0)
@@ -76,18 +78,20 @@ class Beast:
         znum_sum = weights[0]
         for weight in weights[1:]:
             znum_sum += weight
-        return tuple(znum / znum_sum for znum in weights)
+        for i, znum in enumerate(weights):
+            weights[i] = znum / znum_sum
 
     @staticmethod
-    def weightage(table):
-        for index in range(1, len(table) - 1):
-            table[index] = [znum * weight for znum, weight in zip(table[index], table[0])]
+    def weightage(main_table_part, weights):
+        for row in main_table_part:
+            for i, (znum, weight) in enumerate(zip(row, weights)):
+                row[i] = znum * weight
 
     @staticmethod
-    def get_table_n(table, n: int):
-        table: list[list[xusun.Znum]]
+    def get_table_n(main_table_part, n: int):
+        main_table_part: list[list[xusun.Znum]]
         table_n = []
-        for row in table[1:-1]:
+        for row in main_table_part:
             row_n = []
             for znum in row:
                 number = sum([abs(n - p) for p in znum.A + znum.B]) * 0.5
