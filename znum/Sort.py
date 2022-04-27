@@ -14,9 +14,6 @@ class Sort:
         NXF_OPTIONS["nwF"]: (0.1, 0.3, 1, 1),
     }
 
-    def __init__(self, root):
-        self.root: xusun.Znum = root
-
     @staticmethod
     def solver_main(znum1, znum2):
         (normA1, normA2) = Sort.normalization(znum1.A, znum2.A)
