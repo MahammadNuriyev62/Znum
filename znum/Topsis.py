@@ -1,13 +1,8 @@
-from pprint import pprint
-
 import znum.Znum as xusun
+from znum.Beast import Beast
 
 
 class Topsis:
-
-    class CriteriaType:
-        COST = "C"
-        BENEFIT = "B"
 
     class DataType:
         ALTERNATIVE = "A"
@@ -29,11 +24,10 @@ class Topsis:
         criteria_types: list[str] = table[-1]
         main_table_part_transpose = tuple(zip(*table_main_part))
         for column_number, column in enumerate(main_table_part_transpose):
-            Topsis.normalize(column, criteria_types[column_number])
+            Beast.normalize(column, criteria_types[column_number])
 
         if shouldNormalizeWeight:
-            Topsis.normalize_weight(weights)
-
+            Beast.normalize_weight(weights)
 
         Topsis.weightage(table_main_part, weights)
 
@@ -45,38 +39,6 @@ class Topsis:
         p = Topsis.find_distance(s_best, s_worst)
 
         return p
-
-
-    @staticmethod
-    def normalize(znums_of_criteria: list, criteria_type: str):
-        criteria_type_mapper = {
-            Topsis.CriteriaType.COST: Topsis.normalize_cost,
-            Topsis.CriteriaType.BENEFIT: Topsis.normalize_benefit,
-        }
-        criteria_type_mapper.get(criteria_type, criteria_type_mapper[Topsis.CriteriaType.COST])(znums_of_criteria)
-
-    @staticmethod
-    def normalize_benefit(znums_of_criteria: list):
-        all_a = [a for znum in znums_of_criteria for a in znum.A]
-        max_a = max(all_a)
-        for znum in znums_of_criteria:
-            znum.A = [a / max_a for a in znum.A]
-
-    @staticmethod
-    def normalize_cost(znums_of_criteria: list):
-        all_a = [a for znum in znums_of_criteria for a in znum.A]
-        min_a = min(all_a)
-        for znum in znums_of_criteria:
-            znum.A = list(reversed([min_a / a for a in znum.A]))
-
-    @staticmethod
-    def normalize_weight(weights: list):
-        weights: list[xusun.Znum]
-        znum_sum = weights[0]
-        for weight in weights[1:]:
-            znum_sum += weight
-        for i, znum in enumerate(weights):
-            weights[i] = znum / znum_sum
 
     @staticmethod
     def weightage(table_main_part, weights):
