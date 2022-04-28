@@ -1,8 +1,6 @@
 import znum.Znum as xusun
-
-from pprint import pprint
-from znum.Topsis import Topsis
 from znum.Beast import Beast
+
 
 class Promethee:
 
@@ -17,16 +15,23 @@ class Promethee:
             Beast.normalize(column, criteria_types[column_number])
 
         preference_table = Promethee.calculate_preference_table(table_main_part)
+
+        if shouldNormalizeWeight:
+            Beast.normalize_weight(weights)
+
         Promethee.weightage(preference_table, weights)
         Promethee.sum_preferences_of_same_category_pair(preference_table)
+
         vertical_sum = Promethee.vertical_alternative_sum(preference_table)
         horizontal_sum = Promethee.horizontal_alternative_sum(preference_table)
 
         # horizontal_sum - vertical_sum
         table_to_sort = Beast.subtract_matrix(horizontal_sum, vertical_sum)
-        sorted_table = tuple(sorted(table_to_sort, reverse=True))
 
-        print(sorted_table)
+        numerated_table_to_sort = Promethee.numerate(table_to_sort)
+        sorted_table = Promethee.sort_numerated_single_column_table(numerated_table_to_sort)
+
+        return sorted_table
 
     @staticmethod
     def calculate_preference_table(table_main_part):
@@ -58,9 +63,6 @@ class Promethee:
             for preferenceByCategories in preferenceByCategoriesByAlternatives:
                 for index, (preferenceByCategory, weight) in enumerate(zip(preferenceByCategories, weights)):
                     preferenceByCategories[index] = weight * preferenceByCategory  # order is Znum() * Number()
-        # for row in table_main_part:
-        #     for i, (znum, weight) in enumerate(zip(row, weights)):
-        #         row[i] = znum * weight
 
     @staticmethod
     def sum_preferences_of_same_category_pair(preference_table):
@@ -75,3 +77,14 @@ class Promethee:
     @staticmethod
     def horizontal_alternative_sum(preference_table):
         return [Beast.accurate_sum(row) for row in preference_table]
+
+    @staticmethod
+    def numerate(single_column_table):
+        single_column_table: list[xusun.Znum]
+        return list(enumerate(single_column_table, 1))
+
+    @staticmethod
+    def sort_numerated_single_column_table(single_column_table):
+        single_column_table: list[xusun.Znum]
+        sorted_table = tuple(sorted(single_column_table, reverse=True, key=lambda x: x[1]))
+        return sorted_table

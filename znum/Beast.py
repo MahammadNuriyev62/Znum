@@ -57,3 +57,12 @@ class Beast:
         min_a = min(all_a)
         for znum in znums_of_criteria:
             znum.A = list(reversed([min_a / a for a in znum.A]))
+
+    @staticmethod
+    def normalize_weight(weights: list):
+        weights: list[xusun.Znum]
+        znum_sum = weights[0]
+        for weight in weights[1:]:
+            znum_sum += weight
+        for i, znum in enumerate(weights):
+            weights[i] = znum / znum_sum

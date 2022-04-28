@@ -1,5 +1,3 @@
-from pprint import pprint
-
 import znum.Znum as xusun
 from znum.Beast import Beast
 
@@ -29,8 +27,7 @@ class Topsis:
             Beast.normalize(column, criteria_types[column_number])
 
         if shouldNormalizeWeight:
-            Topsis.normalize_weight(weights)
-
+            Beast.normalize_weight(weights)
 
         Topsis.weightage(table_main_part, weights)
 
@@ -42,17 +39,6 @@ class Topsis:
         p = Topsis.find_distance(s_best, s_worst)
 
         return p
-
-
-
-    @staticmethod
-    def normalize_weight(weights: list):
-        weights: list[xusun.Znum]
-        znum_sum = weights[0]
-        for weight in weights[1:]:
-            znum_sum += weight
-        for i, znum in enumerate(weights):
-            weights[i] = znum / znum_sum
 
     @staticmethod
     def weightage(table_main_part, weights):
