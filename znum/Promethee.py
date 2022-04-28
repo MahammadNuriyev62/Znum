@@ -1,7 +1,6 @@
 import znum.Znum as xusun
 
 from pprint import pprint
-
 from znum.Topsis import Topsis
 from znum.Beast import Beast
 
@@ -10,18 +9,16 @@ class Promethee:
     @staticmethod
     def solver_main(table: list[list], shouldNormalizeWeight=False):
         weights: list[xusun.Znum] = table[0]
-        table_main_part: list[list[xusun.Znum]] = table[1:]
+        table_main_part: list[list[xusun.Znum]] = table[1:-1]
+        criteria_types: list[str] = table[-1]
 
         table_main_part_transpose = tuple(zip(*table_main_part))
         for column_number, column in enumerate(table_main_part_transpose):
-            Topsis.normalize(column, Topsis.CriteriaType.BENEFIT)
+            Beast.normalize(column, criteria_types[column_number])
 
         preference_table = Promethee.calculate_preference_table(table_main_part)
         Promethee.weightage(preference_table, weights)
-        # pprint(preference_table)
         Promethee.sum_preferences_of_same_category_pair(preference_table)
-        pprint(preference_table)
-
         vertical_sum = Promethee.vertical_alternative_sum(preference_table)
         horizontal_sum = Promethee.horizontal_alternative_sum(preference_table)
 
@@ -69,12 +66,12 @@ class Promethee:
     def sum_preferences_of_same_category_pair(preference_table):
         for preferenceByCategoriesByAlternatives in preference_table:
             for index, preferenceByCategories in enumerate(preferenceByCategoriesByAlternatives):
-                preferenceByCategoriesByAlternatives[index] = xusun.Znum.Beast.sum(preferenceByCategories)
+                preferenceByCategoriesByAlternatives[index] = Beast.accurate_sum(preferenceByCategories)
 
     @staticmethod
     def vertical_alternative_sum(preference_table):
-        return [Beast.sum(column) for column in zip(*preference_table)]
+        return [Beast.accurate_sum(column) for column in zip(*preference_table)]
 
     @staticmethod
     def horizontal_alternative_sum(preference_table):
-        return [Beast.sum(row) for row in preference_table]
+        return [Beast.accurate_sum(row) for row in preference_table]

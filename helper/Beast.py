@@ -20,9 +20,9 @@ class Beast:
         method = method or Beast.Methods.TOPSIS
         table = Beast.read_xlsx_main()
         if method == Beast.Methods.TOPSIS:
-            return Beast.parse_znums_from_table_for_topsis(table)
+            return Beast.parse_znums_from_table(table)
         elif method == Beast.Methods.PROMETHEE:
-            return Beast.parse_znums_from_table_for_promethee(table)
+            return Beast.parse_znums_from_table(table)
         else:
             raise Exception('Invalid Optimization Method for input Table')
 
@@ -47,21 +47,13 @@ class Beast:
         return table
 
     @staticmethod
-    def parse_znums_from_table_for_topsis(table: list[list]):
+    def parse_znums_from_table(table: list[list]):
         weights, extra, main, types = table[0], table[1], table[2: -1], table[-1]
 
         weights_modified = Beast.parse_znums_from_row(weights[1:])
         main_modified = [Beast.parse_znums_from_row(row[1:]) for row in main]
         types_modified = [t for t in types[1:] if t]
         return [weights_modified, *main_modified, types_modified]
-
-    @staticmethod
-    def parse_znums_from_table_for_promethee(table: list[list]):
-        weights, extra, main = table[0], table[1], table[2:]
-
-        weights_modified = Beast.parse_znums_from_row(weights[1:])
-        main_modified = [Beast.parse_znums_from_row(row[1:]) for row in main]
-        return [weights_modified, *main_modified]
 
     @staticmethod
     def parse_znums_from_row(row: list[int]):
