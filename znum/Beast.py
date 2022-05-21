@@ -66,3 +66,26 @@ class Beast:
             znum_sum += weight
         for i, znum in enumerate(weights):
             weights[i] = znum / znum_sum
+
+    @staticmethod
+    def parse_table(table):
+        weights: list[xusun.Znum] = table[0]
+        table_main_part: list[list[xusun.Znum]] = table[1:-1]
+        criteria_types: list[str] = table[-1]
+
+        weights: list[xusun.Znum] = table[0]
+        table_main_part: list[list[xusun.Znum]] = table[1:-1]
+        criteria_types: list[str] = table[-1]
+
+        return [weights, table_main_part, criteria_types]
+
+    @staticmethod
+    def numerate(single_column_table):
+        single_column_table: list[xusun.Znum]
+        return list(enumerate(single_column_table, 1))
+
+    @staticmethod
+    def sort_numerated_single_column_table(single_column_table):
+        single_column_table: list[xusun.Znum]
+        sorted_table = tuple(sorted(single_column_table, reverse=True, key=lambda x: x[1]))
+        return sorted_table

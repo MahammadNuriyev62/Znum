@@ -1,6 +1,7 @@
 from scipy import optimize
 from numpy import linalg, array
 import znum.Znum as xusun
+import helper.Beast as bst
 
 class Math:
     def __init__(self, root):
@@ -35,20 +36,14 @@ class Math:
         return {'value': Q_int_value, 'memb': Q_int_memb}
 
     def get_matrix(self):
-        self.root.A_int = self.get_intermediate(self.root.A)
-        self.root.B_int = self.get_intermediate(self.root.B)
-        i37 = self.get_i37(self.root.A_int)
-        matrix = [[None for i in range(len(self.root.A_int['value']))
-                   ] for i in range(len(self.root.A_int['value']))]
 
-        c = array(self.root.A_int['memb'])
-        A_eq = array([self.root.A_int['memb'],
-                      [1, 1, 1, 1, 1, 1, 1], self.root.A_int['value']])
-        b_eq = array([0, 1, i37])
-        bounds = [(0, 1) for i in range(len(self.root.A_int['value']))]
+        self.root.A_int, self.root.B_int = self.get_intermediate(self.root.A), self.get_intermediate(self.root.B)
+        i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
+        size, c = len(self.root.A_int['value']), array(self.root.A_int['memb'])
+        matrix, A_eq, bounds = [([i] * size) for i in range(size)], array([self.root.A_int['memb'], [1] * size, self.root.A_int['value']]), [(0, 1)] * size
+
         for i, b20 in enumerate(self.root.B_int['value']):
-            # c = array([-i for i in self.root.A_int['value']])
-            b_eq[0] = b20
+            b_eq = array((b20, 1, i37))
             result = optimize.linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='revised simplex').x
             for j, x in enumerate(result):
                 matrix[j][i] = x
@@ -73,7 +68,7 @@ class Math:
         Q[1] = min(matrix, key=lambda x: x[0])[0]
         Q[2] = max(matrix, key=lambda x: x[0])[0]
 
-        Q = [round(i, 3) for i in Q]
+        Q = [round(i, 6) for i in Q]
         return Q
 
     @staticmethod
@@ -98,7 +93,6 @@ class Math:
                     for element2 in matrix2[j]:
                         row.append(element1 * element2)
                 matrix.append(row)
-
         return matrix
 
     @staticmethod
@@ -111,11 +105,10 @@ class Math:
 
                 # add respective probabilities
                 for i, n in enumerate(row[2:]):
-                    minimized_matrix[row[0]][i + 1] += n
+                    minimized_matrix[row[0]][i+1] += n
             else:
                 minimized_matrix[row[0]] = row[1:]
         minimized_matrix = [[key] + minimized_matrix[key] for key in minimized_matrix]
-
         return minimized_matrix
 
     @staticmethod
@@ -125,12 +118,14 @@ class Math:
         matrix_by_column = matrix_by_column[2:]
 
         final_matrix = []
+
+        size1 = len(Number_z1.B_int['memb'])
+        size2 = len(Number_z2.B_int['memb'])
+
         for i, column in enumerate(matrix_by_column):
             row = [sum([i * j for i, j in zip(column1, column)]),
-                   min(Number_z1.B_int['memb'][i // 7], Number_z2.B_int['memb'][i % 7])
-                   ]
+                   min(Number_z1.B_int['memb'][i // size1], Number_z2.B_int['memb'][i % size2])]
             final_matrix.append(row)
-
         return final_matrix
 
     @staticmethod

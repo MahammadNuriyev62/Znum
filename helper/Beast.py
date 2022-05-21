@@ -1,7 +1,7 @@
 from pprint import pprint
 
-from znum.Znum import Znum
-
+import znum.Znum as xusun
+from uuid import uuid4
 
 class Beast:
     ZNUM_SIZE = 8
@@ -61,7 +61,7 @@ class Beast:
         for i in range(0, len(row), Beast.ZNUM_SIZE):
             znumAsList = row[i:i + Beast.ZNUM_SIZE]
             index = int(Beast.ZNUM_SIZE / 2)
-            znum = Znum(A=znumAsList[:index], B=znumAsList[index:])
+            znum = xusun.Znum(A=znumAsList[:index], B=znumAsList[index:])
             row_modified.append(znum)
         return row_modified
 
@@ -69,7 +69,7 @@ class Beast:
     def save_znums_as_one_column_grouped_by_criteria(table):
         from openpyxl import Workbook
 
-        table: list[list[Znum]]
+        table: list[list[xusun.Znum]]
 
         workbook = Workbook()
         sheet = workbook.create_sheet("XUSUN")
@@ -78,3 +78,22 @@ class Beast:
             for znum in row:
                 sheet.append(znum.A + znum.B)
         workbook.save('output.xlsx')
+
+    @staticmethod
+    def save_array_in_excel(*arrays):
+        spacing = 3
+        from openpyxl import Workbook
+        workbook = Workbook()
+
+        sheet = workbook.active
+        for array in arrays:
+            if type(array[0]) is list or type(array[0]) is tuple:
+                for row in array:
+                    sheet.append(row)
+            else:
+                sheet.append(array)
+
+            for i in range(spacing):
+                sheet.append([None])
+
+        workbook.save(f'output_{uuid4()}.xlsx')

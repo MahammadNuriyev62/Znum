@@ -6,10 +6,11 @@ from znum.Sort import Sort
 from znum.Topsis import Topsis
 from znum.Promethee import Promethee
 from znum.Beast import Beast
+from znum.Vikor import Vikor
 
 
 class Znum:
-
+    Vikor = Vikor
     Topsis = Topsis
     Sort = Sort
     Promethee = Promethee
