@@ -80,6 +80,17 @@ class Beast:
         workbook.save('output.xlsx')
 
     @staticmethod
+    def timer(func):
+        import time
+        def wrapper():
+            start = time.time()
+            result = func()
+            end = time.time()
+            print(f'execution time : {end - start}')
+            return result
+        return wrapper
+
+    @staticmethod
     def save_array_in_excel(*arrays):
         spacing = 3
         from openpyxl import Workbook
