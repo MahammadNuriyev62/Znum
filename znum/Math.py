@@ -2,16 +2,23 @@ import numpy as np
 from scipy import optimize
 from numpy import linalg, array
 import znum.Znum as xusun
-import helper.Beast as bst
+
 
 class Math:
-    METHOD = 'highs-ipm'
+    METHOD = 'simplex'
     PRECISION = 6
-    operations = {
-        '+': lambda x, y: round(x + y, Math.PRECISION),
-        '-': lambda x, y: round(x - y, Math.PRECISION),
-        '*': lambda x, y: round(x * y, Math.PRECISION),
-        '/': lambda x, y: round(x / y, Math.PRECISION),
+
+    class Operations:
+        ADDITION = 1
+        SUBTRACTION = 2
+        DIVISION = 3
+        MULTIPLICATION = 4
+
+    operationFunctions = {
+        Operations.ADDITION: lambda x, y: x + y,
+        Operations.SUBTRACTION: lambda x, y: x - y,
+        Operations.MULTIPLICATION: lambda x, y: x * y,
+        Operations.DIVISION: lambda x, y: x / y,
     }
 
     def __init__(self, root):
@@ -46,43 +53,27 @@ class Math:
         return {'value': Q_int_value, 'memb': Q_int_memb}
 
     def get_matrix(self):
-        # # # # # # # #
-        # goal_programming = 2
-        #
-        # self.root.A_int, self.root.B_int = self.get_intermediate(self.root.A), self.get_intermediate(self.root.B)
-        # i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
-        # c, bounds = array(np.concatenate(([0] * size, [1] * goal_programming))), [(0, 1)] * (size + goal_programming)
-        #
-        # A_eq = array([
-        #     np.concatenate((self.root.A_int['memb'], [1 if i % 2 == 0 else 1 for i in range(goal_programming)])),
-        #     np.concatenate(([1] * size, [0] * goal_programming)),
-        #     np.concatenate((self.root.A_int['value'], [0] * goal_programming))
-        # ])
-        # # # # # # # #
+        d = 10000
 
-        # # # # # # #
-        self.root.A_int, self.root.B_int = self.get_intermediate(self.root.A), self.get_intermediate(self.root.B)
+        # # # # # # # 2 JUNE # # # # # # #
+        self.root.A_int, self.root.B_int = self.root.A_int or self.get_intermediate(
+            self.root.A), self.root.B_int or self.get_intermediate(self.root.B)
         i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
-        c, bounds = self.root.A_int['memb'], np.full((size, 2), (0, 1), dtype=tuple)
-        A_eq = array([self.root.A_int['memb'], np.ones(size), self.root.A_int['value']])
-        # # # # # # #
+        c = array(size * [0] + [d, d])
+        bounds = np.full((size + 2, 2), (0, 1), dtype=tuple)
+
+        A_eq = array([
+            np.concatenate((self.root.A_int['memb'], (-d, d))),
+            np.concatenate(([1] * size, (0, 0))),
+            np.concatenate((self.root.A_int['value'], (0, 0)))
+        ])
 
 
-        # # # # # # # # #
-        # goal_programming = 6
-        #
-        # self.root.A_int, self.root.B_int = self.get_intermediate(self.root.A), self.get_intermediate(self.root.B)
+        # self.root.A_int, self.root.B_int = self.root.A_int or self.get_intermediate(
+        #     self.root.A), self.root.B_int or self.get_intermediate(self.root.B)
         # i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
-        # c, bounds = array(np.concatenate(([0] * size, [1] * goal_programming))), [(0, 1)] * (size + goal_programming)
-        #
-        # A_eq = array([
-        #     np.concatenate((self.root.A_int['memb'], [-1, 1, 0, 0, 0, 0])),
-        #     np.concatenate(([1] * size, [0, 0, -1, 1, 0, 0])),
-        #     np.concatenate((self.root.A_int['value'], [0, 0, 0, 0, -1, 1]))
-        # ])
-        # # # # # # # # #
-
-
+        # c, bounds = self.root.A_int['memb'], np.full((size, 2), (0, 1), dtype=tuple)
+        # A_eq = array([self.root.A_int['memb'], np.ones(size), self.root.A_int['value']])
 
         return tuple(zip(*[
             optimize.linprog(
@@ -90,9 +81,19 @@ class Math:
                 A_eq=A_eq,
                 b_eq=array((b20, 1, i37)),
                 bounds=bounds,
-                method=Math.METHOD).x \
-            for b20 in self.root.B_int['value']
+                method=Math.METHOD
+            ).x[:-2] for b20 in self.root.B_int['value']
         ]))
+
+        # return tuple(zip(*[
+        #     optimize.linprog(
+        #         c,
+        #         A_eq=A_eq,
+        #         b_eq=array((b20, 1, i37)),
+        #         bounds=bounds,
+        #         method=Math.METHOD).x \
+        #     for b20 in self.root.B_int['value']
+        # ]))
 
     @staticmethod
     def get_i37(Q_int):
@@ -110,23 +111,30 @@ class Math:
         Q[1] = min(matrix, key=lambda x: x[0])[0]
         Q[2] = max(matrix, key=lambda x: x[0])[0]
 
-        Q = [round(i, 6) for i in Q]
+        Q = [round(i, Math.PRECISION) for i in Q]
         return Q
 
     @staticmethod
     def get_matrix_main(number_z1, number_z2, operation):
         """
+        :type number_z1: xusun.Znum
+        :type number_z2: xusun.Znum
+        :type operation: int
+
         option
         1 - add,
         2 - sub,
         3 - mul,
-        4 - div
+        4 - div,
         """
-        matrix,  matrix1, matrix2 = [], number_z1.math.get_matrix(), number_z2.math.get_matrix()
-        for i, (A1_int_element_value, A1_int_element_memb) in enumerate(zip(number_z1.A_int['value'], number_z1.A_int['memb'])):
-            for j, (A2_int_element_value, A2_int_element_memb) in enumerate(zip(number_z2.A_int['value'], number_z2.A_int['memb'])):
-                row = [Math.operations[operation](A1_int_element_value, A2_int_element_value), min(A1_int_element_memb, A2_int_element_memb)]
-                matrix.append(row + [element1 * element2 for element1 in matrix1[i] for element2 in matrix2[j] ])
+        matrix, matrix1, matrix2 = [], number_z1.math.get_matrix(), number_z2.math.get_matrix()
+        for i, (A1_int_element_value, A1_int_element_memb) in enumerate(
+                zip(number_z1.A_int['value'], number_z1.A_int['memb'])):
+            for j, (A2_int_element_value, A2_int_element_memb) in enumerate(
+                    zip(number_z2.A_int['value'], number_z2.A_int['memb'])):
+                row = [Math.operationFunctions[operation](A1_int_element_value, A2_int_element_value),
+                       min(A1_int_element_memb, A2_int_element_memb)]
+                matrix.append(row + [element1 * element2 for element1 in matrix1[i] for element2 in matrix2[j]])
         return matrix
 
     @staticmethod
@@ -143,7 +151,6 @@ class Math:
             else:
                 minimized_matrix[row[0]] = row[1:]
         minimized_matrix = [[key] + minimized_matrix[key] for key in minimized_matrix]
-
         return minimized_matrix
 
     @staticmethod
@@ -172,5 +179,3 @@ class Math:
         B = Math.get_Q_from_matrix(matrix)
 
         return xusun.Znum(A, B)
-
-

@@ -7,6 +7,7 @@ from znum.Topsis import Topsis
 from znum.Promethee import Promethee
 from znum.Beast import Beast
 from znum.Vikor import Vikor
+from typing import overload
 
 
 class Znum:
@@ -16,14 +17,25 @@ class Znum:
     Promethee = Promethee
     Beast = Beast
 
-    def __init__(self, A=None, B=None, left=3, right=2, precision=3):
+    def __init__(self, A=None, B=None, left=3, right=2):
         self.A = A or [1, 2, 3, 4]
         self.B = B or [0.1, 0.2, 0.3, 0.4]
-        self.precision = precision
         self.left, self.right = left, right
         self.A_int = None  # self.get_intermediate(A)
         self.B_int = None  # self.get_intermediate(B)
         self.math = Math(self)
+
+    @staticmethod
+    def create1(A_value: list, A_memb: list, B_value: list, B_memb: list, left: int = 3, right: int = 2):
+        znum = Znum()
+        znum.A, znum.B, znum.A_int, znum.B_int, znum.left, znum.right = \
+            None, None, {"value": A_value, "memb": A_memb}, {"value": B_value, "memb": B_memb}, left, right
+        return znum
+
+    @staticmethod
+    def create2(A: list, B: list, left: int = 3, right: int = 2):
+        znum = Znum(A, B, left, right)
+        return znum
 
     def __str__(self):
         return f"Znum(A={self.A}, B={self.B})"
@@ -32,24 +44,27 @@ class Znum:
         return f"Znum(A={self.A}, B={self.B})"
 
     def __add__(self, other):
-        return self.math.z_solver_main(self, other, '+')
+        return self.math.z_solver_main(self, other, Math.Operations.ADDITION)
 
     def __mul__(self, other):
+        """
+        :type other: Union[Znum, int]
+        """
         if type(other) is Znum:
-            return self.math.z_solver_main(self, other, '*')
+            return self.math.z_solver_main(self, other, Math.Operations.MULTIPLICATION)
         if type(other) is float or type(other) is int:
-            return Znum([a*other for a in self.A], self.B.copy())
+            return Znum([a * other for a in self.A], self.B.copy())
         else:
             raise Exception(f'Znum cannot multiplied by a data type {type(other)}')
 
     def __sub__(self, other):
-        return self.math.z_solver_main(self, other, '-')
+        return self.math.z_solver_main(self, other, Math.Operations.SUBTRACTION)
 
     def __truediv__(self, other):
-        return self.math.z_solver_main(self, other, '/')
+        return self.math.z_solver_main(self, other, Math.Operations.DIVISION)
 
     def __pow__(self, power, modulo=None):
-        return Znum(A=[a**power for a in self.A], B=self.B.copy())
+        return Znum(A=[a ** power for a in self.A], B=self.B.copy())
 
     def __gt__(self, o):
         o: Znum
@@ -83,4 +98,3 @@ class Znum:
 
     def copy(self):
         return Znum(A=self.A.copy(), B=self.B.copy())
-
