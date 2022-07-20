@@ -1,6 +1,3 @@
-from abc import abstractmethod
-from pprint import pprint
-
 import znum.Znum as xusun
 from znum.Beast import Beast
 

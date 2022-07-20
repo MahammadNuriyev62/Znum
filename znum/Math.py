@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 from scipy import optimize
 from numpy import linalg, array
@@ -24,31 +26,33 @@ class Math:
     def __init__(self, root):
         self.root: xusun.Znum = root
 
-    @staticmethod
-    def get_membership(Q, n):
-        if Q[0] < n < Q[1]:
-            # kx + b = y
-            x1, y1, x2, y2 = Q[0], 0, Q[1], 1
-            i, j = array([[x1, 1], [x2, 1]]), array([y1, y2])
-            k, b = tuple(linalg.solve(i, j))
-            return k * n + b
-        elif Q[2] < n < Q[3]:
-            x1, y1, x2, y2 = Q[2], 1, Q[3], 0
-            i, j = array([[x1, 1], [x2, 1]]), array([y1, y2])
-            k, b = tuple(linalg.solve(i, j))
-            return k * n + b
-        elif Q[1] <= n <= Q[2]:
-            return 1
-        else:
-            return 0
+    def get_membership(self, Q, n):
+        return self.get_y(n, Q, self.root.C)
+
+    def get_y(self, x, xs, ys):
+        result = self.get_y.cache.get(json.dumps((xs, ys))) or [[x1, x2, y1, y2] for [x1, x2, y1, y2] in zip(
+            xs[1:], xs[:-1], ys[1:], ys[:-1]
+        )]
+        # k * x1 + b = y1
+        # k * x2 + b = y2
+        # k = (y2 - y1) / (x2 - x1)
+        # b = y1 - k * x1
+        # y = k * x + b
+        for x1, x2, y1, y2 in result:
+            if x1 <= x <= x2 or x1 >= x >= x2:
+                k = (y2 - y1) / (x2 - x1)
+                b = y1 - k * x1
+                y = k * x + b
+                return y
 
     def get_intermediate(self, Q):
         left_part = (Q[1] - Q[0]) / self.root.left
         right_part = (Q[3] - Q[2]) / self.root.right
 
         Q_int_value = np.concatenate(([Q[0] + i * left_part for i in range(self.root.left + 1)],
-                                      [Q[2] + i * right_part for i in range(self.root.right + 1)]))
-
+                                      [Q[2] + i * right_part for i in range(self.root.right + 1)]
+                                      [1 if self.root.type.isTriangle else 0:]
+                                      ))
         Q_int_memb = np.array([self.get_membership(Q, i) for i in Q_int_value])
         return {'value': Q_int_value, 'memb': Q_int_memb}
 
@@ -68,13 +72,11 @@ class Math:
             np.concatenate((self.root.A_int['value'], (0, 0)))
         ])
 
-
         # self.root.A_int, self.root.B_int = self.root.A_int or self.get_intermediate(
         #     self.root.A), self.root.B_int or self.get_intermediate(self.root.B)
         # i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
         # c, bounds = self.root.A_int['memb'], np.full((size, 2), (0, 1), dtype=tuple)
         # A_eq = array([self.root.A_int['memb'], np.ones(size), self.root.A_int['value']])
-
         return tuple(zip(*[
             optimize.linprog(
                 c,
@@ -179,3 +181,5 @@ class Math:
         B = Math.get_Q_from_matrix(matrix)
 
         return xusun.Znum(A, B)
+
+    get_y.cache = {}

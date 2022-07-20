@@ -7,7 +7,8 @@ from znum.Topsis import Topsis
 from znum.Promethee import Promethee
 from znum.Beast import Beast
 from znum.Vikor import Vikor
-from typing import overload
+from znum.Valid import Valid
+from znum.Type import Type
 
 
 class Znum:
@@ -17,13 +18,30 @@ class Znum:
     Promethee = Promethee
     Beast = Beast
 
-    def __init__(self, A=None, B=None, left=3, right=2):
-        self.A = A or [1, 2, 3, 4]
-        self.B = B or [0.1, 0.2, 0.3, 0.4]
+
+
+    def __init__(self, A=None, B=None, left=3, right=3, C=None):
+        self.A = A or Znum.get_default_A()
+        self.B = B or Znum.get_default_B()
+        self.C = C or Znum.get_default_C()
         self.left, self.right = left, right
         self.A_int = None  # self.get_intermediate(A)
         self.B_int = None  # self.get_intermediate(B)
         self.math = Math(self)
+        self.valid = Valid(self)
+        self.type = Type(self)
+
+    @staticmethod
+    def get_default_A():
+        return [1, 2, 3, 4]
+
+    @staticmethod
+    def get_default_B():
+        return [0.1, 0.2, 0.3, 0.4]
+
+    @staticmethod
+    def get_default_C():
+        return [0, 1, 1, 0]
 
     @staticmethod
     def create1(A_value: list, A_memb: list, B_value: list, B_memb: list, left: int = 3, right: int = 2):
