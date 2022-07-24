@@ -1,4 +1,5 @@
 import json
+import math
 
 import numpy as np
 from scipy import optimize
@@ -16,6 +17,10 @@ class Math:
         DIVISION = 3
         MULTIPLICATION = 4
 
+    class QIntermediate:
+        VALUE = "value"
+        MEMBERSHIP = "memb"
+
     operationFunctions = {
         Operations.ADDITION: lambda x, y: x + y,
         Operations.SUBTRACTION: lambda x, y: x - y,
@@ -25,6 +30,12 @@ class Math:
 
     def __init__(self, root):
         self.root: xusun.Znum = root
+
+    @staticmethod
+    def get_default_membership(size):
+        half = math.ceil(size / 2)
+        arr = [i * (1 / (half - 1)) for i in range(half)]
+        return (arr if size % 2 == 0 else arr[:-1]) + list(reversed(arr))
 
     def get_membership(self, Q, n):
         return self.get_y(n, Q, self.root.C)
@@ -51,8 +62,9 @@ class Math:
 
         Q_int_value = np.concatenate(([Q[0] + i * left_part for i in range(self.root.left + 1)],
                                       [Q[2] + i * right_part for i in range(self.root.right + 1)]
-                                      [1 if self.root.type.isTriangle else 0:]
+                                      # [1 if self.root.type.isTriangle else 0:]
                                       ))
+
         Q_int_memb = np.array([self.get_membership(Q, i) for i in Q_int_value])
         return {'value': Q_int_value, 'memb': Q_int_memb}
 

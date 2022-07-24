@@ -7,7 +7,6 @@ class Beast:
         COST = "C"
         BENEFIT = "B"
 
-
     @staticmethod
     def sum(array):
         array: list[xusun.Znum]
@@ -73,10 +72,6 @@ class Beast:
         table_main_part: list[list[xusun.Znum]] = table[1:-1]
         criteria_types: list[str] = table[-1]
 
-        weights: list[xusun.Znum] = table[0]
-        table_main_part: list[list[xusun.Znum]] = table[1:-1]
-        criteria_types: list[str] = table[-1]
-
         return [weights, table_main_part, criteria_types]
 
     @staticmethod
@@ -89,3 +84,10 @@ class Beast:
         single_column_table: list[xusun.Znum]
         sorted_table = tuple(sorted(single_column_table, reverse=True, key=lambda x: x[1]))
         return sorted_table
+
+    @staticmethod
+    def transpose_matrix(matrix):
+        """
+        :type matrix: list[list] or list[tuple] or tuple[list] or tuple[tuple]
+        """
+        return zip(*matrix)
