@@ -1,5 +1,6 @@
 import znum.Znum as xusun
 from znum.Beast import Beast
+from znum.Dist import Dist
 
 
 class Topsis:
@@ -9,20 +10,29 @@ class Topsis:
         CRITERIA = "C"
         TYPE = "TYPE"
 
+    class DistanceMethod:
+        SIMPLE = 1
+        HELLINGER = 2
+
     @staticmethod
-    def solver_main(table: list[list], shouldNormalizeWeight=False):
+    def solver_main(table: list[list], shouldNormalizeWeight=False, distanceType=None):
         """
         table[0] -> weights
         table[1:-1] -> main part
         table[-1] -> criteria types
         :param shouldNormalizeWeight:
         :param table:
+        :param distanceType:
         :return:
         """
+        if not distanceType:
+            distanceType = Topsis.DistanceMethod.HELLINGER
+
         weights: list[xusun.Znum] = table[0]
         table_main_part: list[list[xusun.Znum]] = table[1:-1]
         criteria_types: list[str] = table[-1]
         main_table_part_transpose = tuple(zip(*table_main_part))
+
         for column_number, column in enumerate(main_table_part_transpose):
             Beast.normalize(column, criteria_types[column_number])
 
@@ -31,8 +41,12 @@ class Topsis:
 
         Topsis.weightage(table_main_part, weights)
 
-        table_1 = Topsis.get_table_n(table_main_part, 1)
-        table_0 = Topsis.get_table_n(table_main_part, 0)
+        if distanceType == Topsis.DistanceMethod.SIMPLE:
+            table_1 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Simple.calculate(znum, 1))
+            table_0 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Simple.calculate(znum, 0))
+        else:
+            table_1 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Hellinger.calculate(znum, Dist.Hellinger.get_ideal_from_znum(znum, 1)))
+            table_0 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Hellinger.calculate(znum, Dist.Hellinger.get_ideal_from_znum(znum, 0)))
 
         s_best = Topsis.find_extremum(table_1)
         s_worst = Topsis.find_extremum(table_0)
@@ -47,13 +61,13 @@ class Topsis:
                 row[i] = znum * weight
 
     @staticmethod
-    def get_table_n(table_main_part, n: int):
+    def get_table_n(table_main_part, distanceSolver):
         table_main_part: list[list[xusun.Znum]]
         table_n = []
         for row in table_main_part:
             row_n = []
             for znum in row:
-                number = sum([abs(n - p) for p in znum.A + znum.B]) * 0.5
+                number = distanceSolver(znum)
                 row_n.append(number)
             table_n.append(row_n)
         return table_n

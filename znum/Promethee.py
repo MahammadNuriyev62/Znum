@@ -81,7 +81,7 @@ class Promethee:
     @staticmethod
     def numerate(single_column_table):
         single_column_table: list[xusun.Znum]
-        return list(enumerate(single_column_table, 1))
+        return list(enumerate(single_column_table, 0))
 
     @staticmethod
     def sort_numerated_single_column_table(single_column_table):
