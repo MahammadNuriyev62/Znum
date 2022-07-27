@@ -26,7 +26,7 @@ class Topsis:
         :return:
         """
         if not distanceType:
-            distanceType = Topsis.DistanceMethod.SIMPLE
+            distanceType = Topsis.DistanceMethod.HELLINGER
 
         weights: list[xusun.Znum] = table[0]
         table_main_part: list[list[xusun.Znum]] = table[1:-1]

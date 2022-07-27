@@ -1,5 +1,3 @@
-from pprint import pprint
-
 import znum.Znum as xusun
 from uuid import uuid4
 
@@ -26,6 +24,36 @@ class Beast:
         else:
             raise Exception('Invalid Optimization Method for input Table')
 
+    @staticmethod
+    def znum_to_row(znum):
+        """
+        :type znum: xusun.Znum
+        """
+        return [*znum.A, *znum.B]
+
+    @staticmethod
+    def save_znums_to_xlsx(data):
+        """
+        :type data: list[xusun.Znum] or list[list[xusun.Znum]]
+        """
+        data_new = []
+        for d in data:
+            if type(d) == xusun.Znum:
+                data_new.append(Beast.znum_to_row(d))
+            else:
+                row = []
+                for dd in d:
+                    row.extend(Beast.znum_to_row(dd))
+                data_new.append(row)
+        Beast.save_array_in_excel(data_new)
+        # method = method or Beast.Methods.TOPSIS
+        # table = Beast.read_xlsx_main()
+        # if method == Beast.Methods.TOPSIS:
+        #     return Beast.parse_znums_from_table(table)
+        # elif method == Beast.Methods.PROMETHEE:
+        #     return Beast.parse_znums_from_table(table)
+        # else:
+        #     raise Exception('Invalid Optimization Method for input Table')
 
     @staticmethod
     def get_file_path():
@@ -49,7 +77,6 @@ class Beast:
     @staticmethod
     def parse_znums_from_table(table: list[list]):
         weights, extra, main, types = table[0], table[1], table[2: -1], table[-1]
-
         weights_modified = Beast.parse_znums_from_row(weights[1:])
         main_modified = [Beast.parse_znums_from_row(row[1:]) for row in main]
         types_modified = [t for t in types[1:] if t]
@@ -92,6 +119,14 @@ class Beast:
 
     @staticmethod
     def save_array_in_excel(*arrays):
+
+        if type(arrays[-1]) == str:
+            *arrays, filename = arrays
+        else:
+            filename = f'output_{uuid4()}.xlsx'
+
+        print(f'{filename = }')
+
         spacing = 3
         from openpyxl import Workbook
         workbook = Workbook()
@@ -107,4 +142,4 @@ class Beast:
             for i in range(spacing):
                 sheet.append([None])
 
-        workbook.save(f'output_{uuid4()}.xlsx')
+        workbook.save(filename)

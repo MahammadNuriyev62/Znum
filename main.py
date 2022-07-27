@@ -87,10 +87,14 @@ def main():
 
     z1 = Znum([3, 4, 4, 5], [0.65, 0.7, 0.7, 0.75])
     z2 = Znum([7, 10, 10, 12], [0.75, 0.8, 0.8, 0.9])
-
-    print(Znum.Dist.Hellinger.calculate(z1, z2))
+    #
+    # print(Znum.Dist.Hellinger.calculate(z1, z2))
     print(z1 + z2)
 
+    # z1 = Znum([0.791666667, 0.895833333, 0.895833333, 1], [0.676, 0.901, 0.901, 0.97],)
+    # z2 = Znum([0.121, 0.149, 0.149, 0.188], [0.326, 0.628, 0.628, 0.946],)
+
+    # print(z1 * z2)
 
 if __name__ == '__main__':
     main()

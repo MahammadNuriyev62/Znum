@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 from scipy import optimize
-from numpy import linalg, array
+from numpy import array
 import znum.Znum as xusun
 
 
@@ -84,11 +84,6 @@ class Math:
             np.concatenate((self.root.A_int['value'], (0, 0)))
         ])
 
-        # self.root.A_int, self.root.B_int = self.root.A_int or self.get_intermediate(
-        #     self.root.A), self.root.B_int or self.get_intermediate(self.root.B)
-        # i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
-        # c, bounds = self.root.A_int['memb'], np.full((size, 2), (0, 1), dtype=tuple)
-        # A_eq = array([self.root.A_int['memb'], np.ones(size), self.root.A_int['value']])
         return tuple(zip(*[
             optimize.linprog(
                 c,
@@ -98,6 +93,12 @@ class Math:
                 method=Math.METHOD
             ).x[:-2] for b20 in self.root.B_int['value']
         ]))
+
+        # self.root.A_int, self.root.B_int = self.root.A_int or self.get_intermediate(
+        #     self.root.A), self.root.B_int or self.get_intermediate(self.root.B)
+        # i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
+        # c, bounds = self.root.A_int['memb'], np.full((size, 2), (0, 1), dtype=tuple)
+        # A_eq = array([self.root.A_int['memb'], np.ones(size), self.root.A_int['value']])
 
         # return tuple(zip(*[
         #     optimize.linprog(

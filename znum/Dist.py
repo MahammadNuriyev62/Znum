@@ -5,7 +5,10 @@ from znum.Valid import Valid
 QIntermediate = xusun.Math.QIntermediate
 
 class Dist:
+
     class Simple:
+        _COEF = 0.5
+
         @staticmethod
         def calculate(znum, n):
             """
@@ -13,7 +16,7 @@ class Dist:
             :param n:
             :return:
             """
-            return sum([abs(n - p) for p in znum.A + znum.B]) * 0.5
+            return sum([abs(n - p) for p in znum.A + znum.B]) * Dist.Simple._COEF
 
     class Hellinger:
         _COEF_A = 0.5
@@ -29,9 +32,10 @@ class Dist:
             :type znum2: xusun.Znum
             """
             H = Dist.Hellinger._calculate_H(znum1, znum2)
-            A, B = Dist.Hellinger._calculate_AB(znum1, znum2).values()
-            print(A, B, H)
-            return A * Dist.Hellinger._COEF_A + B * Dist.Hellinger._COEF_B + H * Dist.Hellinger._COEF_H
+            results = Dist.Hellinger._calculate_AB(znum1, znum2)
+            A, B = results["A"], results["B"]
+            result = A * Dist.Hellinger._COEF_A + B * Dist.Hellinger._COEF_B + H * Dist.Hellinger._COEF_H
+            return result
 
         @staticmethod
         def _calculate_H(znum1, znum2):
@@ -82,12 +86,8 @@ class Dist:
             :type znum1_half2_q: int or float
             :type znum2_half2_q: int or float
             """
-            print(f'{znum1_half1_q = }, {znum2_half1_q = }, {znum1_half2_q = }, {znum2_half2_q = }')
-            if znum1_half1_q == znum1_half2_q and znum2_half1_q == znum2_half2_q:
-                S = (znum1_half1_q + znum2_half1_q) / 2
-            else:
-                S = (znum1_half1_q + znum2_half1_q) / 2 - (znum1_half2_q + znum2_half2_q) / 2
-            return abs(S)
+            Q = abs((znum1_half1_q + znum1_half2_q) / 2 - (znum2_half1_q + znum2_half2_q) / 2)
+            return Q
 
         @staticmethod
         def get_ideal_from_znum(znum, value=0):
@@ -110,11 +110,6 @@ class Dist:
             }
 
             znum_ideal = xusun.Znum([value] * dimension, [value] * dimension, A_int=A_int, B_int=B_int)
-            print(
-                znum_ideal.A_int,
-                znum_ideal.B_int,
-                sep='\n',
-            )
             return znum_ideal
 
     # @staticmethod
