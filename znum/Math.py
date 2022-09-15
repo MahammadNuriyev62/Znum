@@ -55,16 +55,16 @@ class Math:
                 b = y1 - k * x1
                 y = k * x + b
                 return y
+        return 0
 
     def get_intermediate(self, Q):
         left_part = (Q[1] - Q[0]) / self.root.left
         right_part = (Q[3] - Q[2]) / self.root.right
 
-        Q_int_value = np.concatenate(([Q[0] + i * left_part for i in range(self.root.left + 1)],
-                                      [Q[2] + i * right_part for i in range(self.root.right + 1)]
+        Q_int_value = np.concatenate(([round(Q[0] + i * left_part, 13) for i in range(self.root.left + 1)],
+                                      [round(Q[2] + i * right_part, 13) for i in range(self.root.right + 1)]
                                       # [1 if self.root.type.isTriangle else 0:]
                                       ))
-
         Q_int_memb = np.array([self.get_membership(Q, i) for i in Q_int_value])
         return {'value': Q_int_value, 'memb': Q_int_memb}
 
