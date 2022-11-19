@@ -1,4 +1,7 @@
-import znum.Znum as xusun
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from znum.Znum import Znum
+
 
 class Type:
     TRIANGLE = 1
@@ -7,8 +10,8 @@ class Type:
     ANY = 3
     IDEAL = 4
 
-    def __init__(self, root):
-        self.root: xusun.Znum = root
+    def __init__(self, root: 'Znum'):
+        self.root = root
         self.value = self.get_type()
 
     def get_type(self):

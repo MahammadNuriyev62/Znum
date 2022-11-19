@@ -1,4 +1,6 @@
-import znum.Znum as xusun
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from znum.Znum import Znum
 
 
 class Sort:
@@ -15,7 +17,7 @@ class Sort:
     }
 
     @staticmethod
-    def solver_main(znum1, znum2):
+    def solver_main(znum1: 'Znum', znum2: 'Znum'):
         (normA1, normA2) = Sort.normalization(znum1.A, znum2.A)
 
         intermediateA = Sort.get_intermediate(normA1, normA2)
@@ -43,7 +45,7 @@ class Sort:
         return [q1 - normQ2[len(normQ2) - index - 1] for (index, q1) in enumerate(normQ1)]
 
     @staticmethod
-    def nxF_Q_possibility(intermediateA: tuple[float, float, float, float] or list[float, float, float, float], option):
+    def nxF_Q_possibility(intermediateA: tuple[float, float, float, float] | list[float, float, float, float], option):
         """
         only for 4 corner znum
         a1, a2, ... , b3, b4 may be not the part of znum.A?B

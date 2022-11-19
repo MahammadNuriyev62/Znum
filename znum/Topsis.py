@@ -1,6 +1,8 @@
-import znum.Znum as xusun
-from znum.Beast import Beast
-from znum.Dist import Dist
+from .Beast import Beast
+from .Dist import Dist
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from znum.Znum import Znum
 
 
 class Topsis:
@@ -28,9 +30,10 @@ class Topsis:
         if not distanceType:
             distanceType = Topsis.DistanceMethod.HELLINGER
 
-        weights: list[xusun.Znum] = table[0]
-        table_main_part: list[list[xusun.Znum]] = table[1:-1]
+        weights: list[Znum] = table[0]
+        table_main_part: list[list[Znum]] = table[1:-1]
         criteria_types: list[str] = table[-1]
+        print(f'{table_main_part = }')
         main_table_part_transpose = tuple(zip(*table_main_part))
 
         for column_number, column in enumerate(main_table_part_transpose):
@@ -61,8 +64,7 @@ class Topsis:
                 row[i] = znum * weight
 
     @staticmethod
-    def get_table_n(table_main_part, distanceSolver):
-        table_main_part: list[list[xusun.Znum]]
+    def get_table_n(table_main_part: list[list['Znum']], distanceSolver):
         table_n = []
         for row in table_main_part:
             row_n = []

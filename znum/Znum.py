@@ -1,12 +1,12 @@
-from znum.Math import Math
-from znum.Sort import Sort
-from znum.Topsis import Topsis
-from znum.Promethee import Promethee
-from znum.Beast import Beast
-from znum.Vikor import Vikor
-from znum.Valid import Valid
-from znum.Type import Type
-from znum.Dist import Dist
+from .Math import Math
+from .Sort import Sort
+from .Topsis import Topsis
+from .Promethee import Promethee
+from .Beast import Beast
+from .Vikor import Vikor
+from .Valid import Valid
+from .Type import Type
+from .Dist import Dist
 
 
 class Znum:
@@ -85,10 +85,10 @@ class Znum:
     #     return znum
 
     def __str__(self):
-        return f"Znum(A={self.A}, B={self.B})"
+        return "Znum(A="+str(self.A)+", B="+str(self.B)+")"
 
     def __repr__(self) -> str:
-        return f"Znum(A={self.A}, B={self.B})"
+        return "Znum(A="+str(self.A)+", B="+str(self.B)+")"
 
     def __add__(self, other):
         return self.math.z_solver_main(self, other, Math.Operations.ADDITION)
@@ -145,3 +145,6 @@ class Znum:
 
     def copy(self):
         return Znum(A=self.A.copy(), B=self.B.copy())
+
+    def to_json(self):
+        return {"A": self.A, "B": self.B}

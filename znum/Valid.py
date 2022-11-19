@@ -1,14 +1,18 @@
-import znum.Znum as xusun
-from znum.exception import *
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from znum.Znum import Znum
+from .exception import *
 
 
 class Valid:
     class Decorator:
         @staticmethod
         def filter_znums(args, callback, exception):
+            from znum.Znum import Znum
             for arg in args:
-                if type(arg) == xusun.Znum:
-                    arg: xusun.Znum
+                if type(arg) == Znum:
+                    arg: Znum
                     if callback(arg):
                         raise exception
 
@@ -17,15 +21,18 @@ class Valid:
             def wrapper(*args):
                 Valid.Decorator.filter_znums(args, lambda znum: not znum.type.isEven, ZnumMustBeEvenException)
                 return func(*args)
+
             return wrapper
 
         @staticmethod
         def check_if_znums_are_in_same_dimension(func):
+
             def wrapper(*args):
+                from znum.Znum import Znum
                 dimension = None
                 for arg in args:
-                    if type(arg) == xusun.Znum:
-                        arg: xusun.Znum
+                    if type(arg) == Znum:
+                        arg: Znum
                         if not dimension:
                             dimension = arg.dimension
                         else:
@@ -36,12 +43,13 @@ class Valid:
             return wrapper
 
     def __init__(self, root):
-        self.root: xusun.Znum = root
+        self.root: Znum = root
         self.validate_A()
         self.validate_B()
 
     def validate_A(self):
         A = self.root.A
+        # print(f'{A = }')
         if list(sorted(A)) != A:
             raise InvalidAPartOfZnumException()
 
@@ -58,8 +66,3 @@ class Valid:
 
         if len(A) == len(B) != len(C):
             raise InvalidZnumCPartDimensionException()
-
-
-
-
-

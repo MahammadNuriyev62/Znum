@@ -1,5 +1,6 @@
-import znum.Znum as xusun
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from znum.Znum import Znum
 
 
 class Beast:
@@ -9,24 +10,26 @@ class Beast:
 
     @staticmethod
     def sum(array):
-        array: list[xusun.Znum]
+        from znum.Znum import Znum
+        array: list[Znum]
 
-        result = xusun.Znum([0, 0, 0, 0], [1, 1, 1, 1])
+        result = Znum([0, 0, 0, 0], [1, 1, 1, 1])
         for znum in array:
-            if type(znum) is xusun.Znum:
+            if type(znum) is Znum:
                 result += znum
         return result
 
     @staticmethod
     def accurate_sum(array):
-        array: list[xusun.Znum]
+        from znum.Znum import Znum
+        array: list[Znum]
 
         array = list(filter(lambda x: x, array))
         if len(array) == 0: return None
 
         result = array[0]
         for znum in array[1:]:
-            if type(znum) is xusun.Znum:
+            if type(znum) is Znum:
                 result += znum
         return result
 
@@ -59,7 +62,7 @@ class Beast:
 
     @staticmethod
     def normalize_weight(weights: list):
-        weights: list[xusun.Znum]
+        weights: list[Znum]
         znum_sum = weights[0]
         for weight in weights[1:]:
             znum_sum += weight
@@ -68,20 +71,19 @@ class Beast:
 
     @staticmethod
     def parse_table(table):
-        weights: list[xusun.Znum] = table[0]
-        table_main_part: list[list[xusun.Znum]] = table[1:-1]
+        weights: list[Znum] = table[0]
+        table_main_part: list[list[Znum]] = table[1:-1]
         criteria_types: list[str] = table[-1]
 
         return [weights, table_main_part, criteria_types]
 
     @staticmethod
-    def numerate(single_column_table):
-        single_column_table: list[xusun.Znum]
+    def numerate(single_column_table: list['Znum']):
         return list(enumerate(single_column_table, 1))
 
     @staticmethod
     def sort_numerated_single_column_table(single_column_table):
-        single_column_table: list[xusun.Znum]
+        single_column_table: list[Znum]
         sorted_table = tuple(sorted(single_column_table, reverse=True, key=lambda x: x[1]))
         return sorted_table
 
