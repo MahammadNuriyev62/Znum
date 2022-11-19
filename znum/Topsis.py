@@ -6,7 +6,6 @@ if TYPE_CHECKING:
 
 
 class Topsis:
-
     class DataType:
         ALTERNATIVE = "A"
         CRITERIA = "C"
@@ -17,7 +16,7 @@ class Topsis:
         HELLINGER = 2
 
     @staticmethod
-    def solver_main(table: list[list], shouldNormalizeWeight=False, distanceType=None):
+    def solver_main(table: list[list], shouldNormalizeWeight=False, distanceType=DistanceMethod.HELLINGER):
         """
         table[0] -> weights
         table[1:-1] -> main part
@@ -27,8 +26,6 @@ class Topsis:
         :param distanceType:
         :return:
         """
-        if not distanceType:
-            distanceType = Topsis.DistanceMethod.HELLINGER
 
         weights: list[Znum] = table[0]
         table_main_part: list[list[Znum]] = table[1:-1]
@@ -48,8 +45,12 @@ class Topsis:
             table_1 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Simple.calculate(znum, 1))
             table_0 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Simple.calculate(znum, 0))
         else:
-            table_1 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Hellinger.calculate(znum, Dist.Hellinger.get_ideal_from_znum(znum, 1)))
-            table_0 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Hellinger.calculate(znum, Dist.Hellinger.get_ideal_from_znum(znum, 0)))
+            table_1 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Hellinger.calculate(znum,
+                                                                                                Dist.Hellinger.get_ideal_from_znum(
+                                                                                                    znum, 1)))
+            table_0 = Topsis.get_table_n(table_main_part, lambda znum: Dist.Hellinger.calculate(znum,
+                                                                                                Dist.Hellinger.get_ideal_from_znum(
+                                                                                                    znum, 0)))
 
         s_best = Topsis.find_extremum(table_1)
         s_worst = Topsis.find_extremum(table_0)

@@ -148,3 +148,6 @@ class Znum:
 
     def to_json(self):
         return {"A": self.A, "B": self.B}
+
+    def to_array(self):
+        return self._A + self._B
