@@ -32,6 +32,10 @@ class Beast:
         return [*znum.A, *znum.B]
 
     @staticmethod
+    def transpose(matrix):
+        return zip(*matrix)
+
+    @staticmethod
     def save_znums_to_xlsx(data):
         """
         :type data: list[xusun.Znum] or list[list[xusun.Znum]]

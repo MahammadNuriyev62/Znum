@@ -1,8 +1,10 @@
-import znum.Znum as xusun
-from znum.Beast import Beast
-from znum.Valid import Valid
+from .Valid import Valid
+from .Beast import Beast
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from znum.Znum import Znum
 
-QIntermediate = xusun.Math.QIntermediate
+# QIntermediate = zn.Math.Math.QIntermediate
 
 class Dist:
 
@@ -12,7 +14,7 @@ class Dist:
         @staticmethod
         def calculate(znum, n):
             """
-            :type znum: xusun.Znum
+            :type znum: zn.Znum.Znum
             :param n:
             :return:
             """
@@ -28,8 +30,8 @@ class Dist:
         @Valid.Decorator.check_if_znums_are_in_same_dimension
         def calculate(znum1, znum2):
             """
-            :type znum1: xusun.Znum
-            :type znum2: xusun.Znum
+            :type znum1: zn.Znum.Znum
+            :type znum2: zn.Znum.Znum
             """
             H = Dist.Hellinger._calculate_H(znum1, znum2)
             results = Dist.Hellinger._calculate_AB(znum1, znum2)
@@ -40,8 +42,8 @@ class Dist:
         @staticmethod
         def _calculate_H(znum1, znum2):
             """
-            :type znum1: xusun.Znum
-            :type znum2: xusun.Znum
+            :type znum1: zn.Znum.Znum
+            :type znum2: zn.Znum.Znum
             """
             znum1_optimization_matrix, znum2_optimization_matrix = znum1.math.get_matrix(), znum2.math.get_matrix()
             znum1_optimization_matrix_transpose, znum2_optimization_matrix_transpose = Beast.transpose_matrix(znum1_optimization_matrix), Beast.transpose_matrix(znum2_optimization_matrix)
@@ -51,8 +53,8 @@ class Dist:
         @staticmethod
         def _calculate_AB(znum1, znum2):
             """
-            :type znum1: xusun.Znum
-            :type znum2: xusun.Znum
+            :type znum1: zn.Znum.Znum
+            :type znum2: zn.Znum.Znum
             """
             dimension = znum1.dimension
             halfDimension = dimension // 2
@@ -91,32 +93,34 @@ class Dist:
 
         @staticmethod
         def get_ideal_from_znum(znum, value=0):
+            from .Math import Math
+            from .Znum import Znum
             """
-            :type znum: xusun.Znum
+            :type znum: zn.Znum.Znum
             :type value: int
             """
             znum_A_int = znum.A_int
             dimension = znum.dimension
-            size = len(znum_A_int[QIntermediate.VALUE])
+            size = len(znum_A_int[Math.QIntermediate.VALUE])
 
             A_int = {
-                QIntermediate.VALUE: [value] * size,
-                QIntermediate.MEMBERSHIP: xusun.Math.get_default_membership(size)
+                Math.QIntermediate.VALUE: [value] * size,
+                Math.QIntermediate.MEMBERSHIP: Math.get_default_membership(size)
             }
 
             B_int = {
-                QIntermediate.VALUE: A_int[QIntermediate.VALUE].copy(),
-                QIntermediate.MEMBERSHIP: A_int[QIntermediate.MEMBERSHIP].copy(),
+                Math.QIntermediate.VALUE: A_int[Math.QIntermediate.VALUE].copy(),
+                Math.QIntermediate.MEMBERSHIP: A_int[Math.QIntermediate.MEMBERSHIP].copy(),
             }
 
-            znum_ideal = xusun.Znum([value] * dimension, [value] * dimension, A_int=A_int, B_int=B_int)
+            znum_ideal = Znum([value] * dimension, [value] * dimension, A_int=A_int, B_int=B_int)
             return znum_ideal
 
     # @staticmethod
     # def calculate_with_ideal(znum, value=0):
     #     """
     #     :param value:
-    #     :type znum: xusun.Znum
+    #     :type znum: zn.Znum.Znum
     #     """
     #     znum_A_int = znum.A_int
     #     optimization_matrix_znum = znum.math.get_matrix()
@@ -132,7 +136,7 @@ class Dist:
     #         QIntermediate.MEMBERSHIP: A_int[QIntermediate.MEMBERSHIP].copy(),
     #     }
     #
-    #     znum_ideal = xusun.Znum([value] * 4, [value] * 4, A_int=A_int, B_int=B_int)
+    #     znum_ideal = zn.Znum.Znum([value] * 4, [value] * 4, A_int=A_int, B_int=B_int)
     #     optimization_matrix_znum_ideal = znum_ideal.math.get_matrix()
     #
     #     optimization_matrix_znum_transpose = zip(*optimization_matrix_znum)

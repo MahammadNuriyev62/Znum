@@ -1,10 +1,11 @@
 import json
 import math
-
 import numpy as np
 from scipy import optimize
 from numpy import array
-import znum.Znum as xusun
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from znum.Znum import Znum
 
 
 class Math:
@@ -29,7 +30,7 @@ class Math:
     }
 
     def __init__(self, root):
-        self.root: xusun.Znum = root
+        self.root: Znum = root
 
     @staticmethod
     def get_default_membership(size):
@@ -55,16 +56,16 @@ class Math:
                 b = y1 - k * x1
                 y = k * x + b
                 return y
+        return 0
 
     def get_intermediate(self, Q):
         left_part = (Q[1] - Q[0]) / self.root.left
         right_part = (Q[3] - Q[2]) / self.root.right
 
-        Q_int_value = np.concatenate(([Q[0] + i * left_part for i in range(self.root.left + 1)],
-                                      [Q[2] + i * right_part for i in range(self.root.right + 1)]
+        Q_int_value = np.concatenate(([round(Q[0] + i * left_part, 13) for i in range(self.root.left + 1)],
+                                      [round(Q[2] + i * right_part, 13) for i in range(self.root.right + 1)]
                                       # [1 if self.root.type.isTriangle else 0:]
                                       ))
-
         Q_int_memb = np.array([self.get_membership(Q, i) for i in Q_int_value])
         return {'value': Q_int_value, 'memb': Q_int_memb}
 
@@ -121,7 +122,7 @@ class Math:
         Q[0] = min(matrix, key=lambda x: x[0])[0]
         Q[3] = max(matrix, key=lambda x: x[0])[0]
 
-        matrix = list(filter(lambda x: x[1] == 1, matrix))
+        matrix = list(filter(lambda x: round(x[1], 6) == 1, matrix))
 
         Q[1] = min(matrix, key=lambda x: x[0])[0]
         Q[2] = max(matrix, key=lambda x: x[0])[0]
@@ -130,12 +131,8 @@ class Math:
         return Q
 
     @staticmethod
-    def get_matrix_main(number_z1, number_z2, operation):
+    def get_matrix_main(number_z1: 'Znum', number_z2: 'Znum', operation: int):
         """
-        :type number_z1: xusun.Znum
-        :type number_z2: xusun.Znum
-        :type operation: int
-
         option
         1 - add,
         2 - sub,
@@ -187,12 +184,13 @@ class Math:
 
     @staticmethod
     def z_solver_main(number_z1, number_z2, operation):
+        from znum.Znum import Znum
         matrix = Math.get_matrix_main(number_z1, number_z2, operation)
         matrix = Math.get_minimized_matrix(matrix)
         A = Math.get_Q_from_matrix(matrix)
         matrix = Math.get_prob_pos(matrix, number_z1, number_z2)
         B = Math.get_Q_from_matrix(matrix)
 
-        return xusun.Znum(A, B)
+        return Znum(A, B)
 
     get_y.cache = {}
