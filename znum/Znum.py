@@ -72,23 +72,11 @@ class Znum:
     def get_default_C():
         return [0, 1, 1, 0]
 
-    # @staticmethod
-    # def create1(A_value: list, A_memb: list, B_value: list, B_memb: list, left: int = 3, right: int = 2):
-    #     znum = Znum()
-    #     znum.A, znum.B, znum.A_int, znum.B_int, znum.left, znum.right = \
-    #         None, None, {"value": A_value, "memb": A_memb}, {"value": B_value, "memb": B_memb}, left, right
-    #     return znum
-    #
-    # @staticmethod
-    # def create2(A: list, B: list, left: int = 3, right: int = 2):
-    #     znum = Znum(A, B, left, right)
-    #     return znum
-
     def __str__(self):
-        return "Znum(A="+str(self.A)+", B="+str(self.B)+")"
+        return "Znum(A=" + str(self.A) + ", B=" + str(self.B) + ")"
 
     def __repr__(self) -> str:
-        return "Znum(A="+str(self.A)+", B="+str(self.B)+")"
+        return "Znum(A=" + str(self.A) + ", B=" + str(self.B) + ")"
 
     def __add__(self, other):
         return self.math.z_solver_main(self, other, Math.Operations.ADDITION)
@@ -102,7 +90,7 @@ class Znum:
         if type(other) is float or type(other) is int:
             return Znum([a * other for a in self.A], self.B.copy())
         else:
-            raise Exception(f'Znum cannot multiplied by a data type {type(other)}')
+            raise Exception(f"Znum cannot multiplied by a data type {type(other)}")
 
     def __sub__(self, other):
         return self.math.z_solver_main(self, other, Math.Operations.SUBTRACTION)
@@ -111,34 +99,29 @@ class Znum:
         return self.math.z_solver_main(self, other, Math.Operations.DIVISION)
 
     def __pow__(self, power, modulo=None):
-        return Znum(A=[a ** power for a in self.A], B=self.B.copy())
+        return Znum(A=[a**power for a in self.A], B=self.B.copy())
 
-    def __gt__(self, o):
-        o: Znum
+    def __gt__(self, o: "Znum"):
         d, do = Znum.Sort.solver_main(self, o)
         _d, _do = Znum.Sort.solver_main(o, self)
         return do > _do
 
-    def __lt__(self, o):
-        o: Znum
+    def __lt__(self, o: "Znum"):
         d, do = Znum.Sort.solver_main(self, o)
         _d, _do = Znum.Sort.solver_main(o, self)
         return do < _do
 
     def __eq__(self, o):
-        o: Znum
         d, do = Znum.Sort.solver_main(self, o)
         _d, _do = Znum.Sort.solver_main(o, self)
         return do == 1 and _do == 1
 
-    def __ge__(self, o):
-        o: Znum
+    def __ge__(self, o: "Znum"):
         d, do = Znum.Sort.solver_main(self, o)
         _d, _do = Znum.Sort.solver_main(o, self)
         return do >= _do
 
-    def __le__(self, o):
-        o: Znum
+    def __le__(self, o: "Znum"):
         d, do = Znum.Sort.solver_main(self, o)
         _d, _do = Znum.Sort.solver_main(o, self)
         return do <= _do
@@ -151,3 +134,8 @@ class Znum:
 
     def to_array(self):
         return self._A + self._B
+
+    def __radd__(self, other):
+        if isinstance(other, (int, float)) and other == 0:
+            return self
+        return NotImplemented
