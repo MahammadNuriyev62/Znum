@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+import numpy as np
 
 if TYPE_CHECKING:
     from znum.Znum import Znum
@@ -12,7 +13,7 @@ class Valid:
             from znum.Znum import Znum
 
             for arg in args:
-                if type(arg) == Znum:
+                if type(arg) is Znum:
                     arg: Znum
                     if callback(arg):
                         raise exception
@@ -52,13 +53,12 @@ class Valid:
 
     def validate_A(self):
         A = self.root.A
-        # print(f'{A = }')
-        if list(sorted(A)) != A:
+        if not np.all(A[:-1] <= A[1:]):
             raise InvalidAPartOfZnumException()
 
     def validate_B(self):
         B = self.root.B
-        if list(sorted(B)) != B or B[-1] > 1 or B[0] < 0:
+        if not np.all(B[:-1] <= B[1:]) or B[-1] > 1 or B[0] < 0:
             raise InvalidBPartOfZnumException()
 
     def validate(self):

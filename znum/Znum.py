@@ -1,3 +1,4 @@
+import numpy as np
 from .Math import Math
 from .Sort import Sort
 from .Topsis import Topsis
@@ -19,42 +20,42 @@ class Znum:
     Dist = Dist
 
     def __init__(self, A=None, B=None, left=4, right=4, C=None, A_int=None, B_int=None):
-        self._A = A or Znum.get_default_A()
-        self._B = B or Znum.get_default_B()
-        self._C = C or Znum.get_default_C()
+        self._A = np.array(A if A is not None else Znum.get_default_A(), dtype=float)
+        self._B = np.array(B if B is not None else Znum.get_default_B(), dtype=float)
+        self._C = np.array(C if C is not None else Znum.get_default_C(), dtype=float)
         self._dimension = len(self._A)
         self.left, self.right = left, right
         self.math = Math(self)
         self.valid = Valid(self)
         self.type = Type(self)
-        self.A_int = A_int or self.math.get_intermediate(A)
-        self.B_int = B_int or self.math.get_intermediate(B)
+        self.A_int = A_int or self.math.get_intermediate(self._A)
+        self.B_int = B_int or self.math.get_intermediate(self._B)
 
     @property
     def A(self):
         return self._A
 
     @A.setter
-    def A(self, A: list):
-        self._A = A
-        self.A_int = self.math.get_intermediate(A)
+    def A(self, A):
+        self._A = np.array(A, dtype=float)
+        self.A_int = self.math.get_intermediate(self._A)
 
     @property
     def B(self):
         return self._B
 
     @B.setter
-    def B(self, B: list):
-        self._B = B
-        self.B_int = self.math.get_intermediate(B)
+    def B(self, B):
+        self._B = np.array(B, dtype=float)
+        self.B_int = self.math.get_intermediate(self._B)
 
     @property
     def C(self):
         return self._C
 
     @C.setter
-    def C(self, C: list):
-        self._C = C
+    def C(self, C):
+        self._C = np.array(C, dtype=float)
 
     @property
     def dimension(self):
@@ -62,24 +63,18 @@ class Znum:
 
     @staticmethod
     def get_default_A():
-        return [1, 2, 3, 4]
+        return np.array([1, 2, 3, 4], dtype=float)
 
     @staticmethod
     def get_default_B():
-        return [0.1, 0.2, 0.3, 0.4]
+        return np.array([0.1, 0.2, 0.3, 0.4], dtype=float)
 
     @staticmethod
     def get_default_C():
-        return [0, 1, 1, 0]
+        return np.array([0, 1, 1, 0], dtype=float)
 
     def __str__(self):
-        return (
-            "Znum(A="
-            + str([float(a) for a in self.A])
-            + ", B="
-            + str([float(b) for b in self.B])
-            + ")"
-        )
+        return "Znum(A=" + str(self.A.tolist()) + ", B=" + str(self.B.tolist()) + ")"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -89,12 +84,12 @@ class Znum:
 
     def __mul__(self, other):
         """
-        :type other: Union[Znum, int]
+        :type other: Union[Znum, int, float]
         """
-        if type(other) is Znum:
+        if isinstance(other, Znum):
             return self.math.z_solver_main(self, other, Math.Operations.MULTIPLICATION)
-        if type(other) is float or type(other) is int:
-            return Znum([a * other for a in self.A], self.B.copy())
+        if isinstance(other, (float, int)):
+            return Znum(A=self.A * other, B=self.B.copy())
         else:
             raise Exception(f"Znum cannot multiplied by a data type {type(other)}")
 
@@ -105,7 +100,7 @@ class Znum:
         return self.math.z_solver_main(self, other, Math.Operations.DIVISION)
 
     def __pow__(self, power, modulo=None):
-        return Znum(A=[a**power for a in self.A], B=self.B.copy())
+        return Znum(A=self.A**power, B=self.B.copy())
 
     def __gt__(self, o: "Znum"):
         d, do = Znum.Sort.solver_main(self, o)
@@ -136,10 +131,10 @@ class Znum:
         return Znum(A=self.A.copy(), B=self.B.copy())
 
     def to_json(self):
-        return {"A": self.A, "B": self.B}
+        return {"A": self.A.tolist(), "B": self.B.tolist()}
 
     def to_array(self):
-        return self._A + self._B
+        return np.concatenate([self._A, self._B])
 
     def __radd__(self, other):
         if isinstance(other, (int, float)) and other == 0:

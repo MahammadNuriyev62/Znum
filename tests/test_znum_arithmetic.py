@@ -1,5 +1,6 @@
 import pytest
 from znum.Znum import Znum
+import numpy as np
 
 
 @pytest.fixture
@@ -37,13 +38,8 @@ def assert_znum_equal(actual, expected_A, expected_B, rel=1e-5):
     Helper to assert that a Znum's A and B match expected values within
     a tolerance (for floating-point B).
     """
-    # Check the A array for exact match if they are indeed exact
-    assert actual.A == expected_A, f"A mismatch: {actual.A} != {expected_A}"
-    # Check the B array with approximate
-    for i in range(len(expected_B)):
-        assert actual.B[i] == pytest.approx(expected_B[i], rel=rel), (
-            f"B mismatch at index {i}: {actual.B[i]} != approx({expected_B[i]})"
-        )
+    for actual, expected in [(actual.A, expected_A), (actual.B, expected_B)]:
+        assert np.linalg.norm(actual - expected) < rel
 
 
 def test_z1_plus_z2(znums):

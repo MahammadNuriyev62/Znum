@@ -1,4 +1,3 @@
-import json
 import math
 import numpy as np
 from scipy import optimize
@@ -43,7 +42,7 @@ class Math:
         return self.get_y(n, Q, self.root.C)
 
     def get_y(self, x, xs, ys):
-        result = self.get_y.cache.get(json.dumps((xs, ys))) or [
+        result = [
             [x1, x2, y1, y2]
             for [x1, x2, y1, y2] in zip(xs[1:], xs[:-1], ys[1:], ys[:-1])
         ]
@@ -229,5 +228,3 @@ class Math:
         B = Math.get_Q_from_matrix(matrix)
 
         return Znum(A, B)
-
-    get_y.cache = {}
