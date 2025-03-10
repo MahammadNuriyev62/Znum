@@ -1,6 +1,5 @@
 import pytest
 from znum.Znum import Znum
-import numpy as np
 
 
 @pytest.fixture
