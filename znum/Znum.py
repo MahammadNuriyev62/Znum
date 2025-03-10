@@ -73,10 +73,16 @@ class Znum:
         return [0, 1, 1, 0]
 
     def __str__(self):
-        return "Znum(A=" + str(self.A) + ", B=" + str(self.B) + ")"
+        return (
+            "Znum(A="
+            + str([float(a) for a in self.A])
+            + ", B="
+            + str([float(b) for b in self.B])
+            + ")"
+        )
 
     def __repr__(self) -> str:
-        return "Znum(A=" + str(self.A) + ", B=" + str(self.B) + ")"
+        return self.__str__()
 
     def __add__(self, other):
         return self.math.z_solver_main(self, other, Math.Operations.ADDITION)

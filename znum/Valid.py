@@ -10,6 +10,7 @@ class Valid:
         @staticmethod
         def filter_znums(args, callback, exception):
             from znum.Znum import Znum
+
             for arg in args:
                 if type(arg) == Znum:
                     arg: Znum
@@ -19,19 +20,21 @@ class Valid:
         @staticmethod
         def check_if_znums_are_even(func):
             def wrapper(*args):
-                Valid.Decorator.filter_znums(args, lambda znum: not znum.type.isEven, ZnumMustBeEvenException)
+                Valid.Decorator.filter_znums(
+                    args, lambda znum: not znum.type.isEven, ZnumMustBeEvenException
+                )
                 return func(*args)
 
             return wrapper
 
         @staticmethod
         def check_if_znums_are_in_same_dimension(func):
-
             def wrapper(*args):
                 from znum.Znum import Znum
+
                 dimension = None
                 for arg in args:
-                    if type(arg) == Znum:
+                    if type(arg) is Znum:
                         arg: Znum
                         if not dimension:
                             dimension = arg.dimension
