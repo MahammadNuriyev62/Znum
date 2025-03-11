@@ -76,14 +76,9 @@ class Math:
     def get_matrix(self):
         d = 10000
 
-        # # # # # # # 2 JUNE # # # # # # #
-        self.root.A_int, self.root.B_int = (
-            self.root.A_int or self.get_intermediate(self.root.A),
-            self.root.B_int or self.get_intermediate(self.root.B),
-        )
         i37, size = self.get_i37(self.root.A_int), len(self.root.A_int["value"])
-        c = array(size * [0] + [d, d])
-        bounds = np.full((size + 2, 2), (0, 1), dtype=tuple)
+        c = np.concatenate([np.zeros(size), (d, d)], axis=0)
+        bounds = np.full((size + 2, 2), (0, 1))
 
         A_eq = array(
             [
@@ -93,36 +88,18 @@ class Math:
             ]
         )
 
-        return tuple(
-            zip(
-                *[
-                    optimize.linprog(
-                        c,
-                        A_eq=A_eq,
-                        b_eq=array((b20, 1, i37)),
-                        bounds=bounds,
-                        method=Math.METHOD,
-                    ).x[:-2]
-                    for b20 in self.root.B_int["value"]
-                ]
-            )
-        )
-
-        # self.root.A_int, self.root.B_int = self.root.A_int or self.get_intermediate(
-        #     self.root.A), self.root.B_int or self.get_intermediate(self.root.B)
-        # i37, size = self.get_i37(self.root.A_int), len(self.root.A_int['value'])
-        # c, bounds = self.root.A_int['memb'], np.full((size, 2), (0, 1), dtype=tuple)
-        # A_eq = array([self.root.A_int['memb'], np.ones(size), self.root.A_int['value']])
-
-        # return tuple(zip(*[
-        #     optimize.linprog(
-        #         c,
-        #         A_eq=A_eq,
-        #         b_eq=array((b20, 1, i37)),
-        #         bounds=bounds,
-        #         method=Math.METHOD).x \
-        #     for b20 in self.root.B_int['value']
-        # ]))
+        return np.array(
+            [
+                optimize.linprog(
+                    c,
+                    A_eq=A_eq,
+                    b_eq=array((b20, 1, i37)),
+                    bounds=bounds,
+                    method=Math.METHOD,
+                ).x[:-2]
+                for b20 in self.root.B_int["value"]
+            ]
+        ).T
 
     @staticmethod
     def get_i37(Q_int):
@@ -169,14 +146,8 @@ class Math:
                     ),
                     min(A1_int_element_memb, A2_int_element_memb),
                 ]
-                matrix.append(
-                    row
-                    + [
-                        element1 * element2
-                        for element1 in matrix1[i]
-                        for element2 in matrix2[j]
-                    ]
-                )
+                # element1 * element2 for element1 in matrix1[i] for element2 in matrix2[j]
+                matrix.append(row + np.outer(matrix1[i], matrix2[j]).flatten().tolist())
         return matrix
 
     @staticmethod
