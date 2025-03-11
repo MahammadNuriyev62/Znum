@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class Math:
     METHOD = "simplex"
-    PRECISION = 13
+    PRECISION = 12
 
     class Operations:
         ADDITION = 1

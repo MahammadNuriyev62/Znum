@@ -4,6 +4,6 @@ from helper.Beast import Beast
 
 if __name__ == "__main__":
     table = Beast.read_znums_from_xlsx(Beast.Methods.PROMETHEE)
-    p = Znum.Promethee(table).solve()
-    #
-    print(p)
+    problem = Znum.Promethee(table)
+    problem.solve()
+    print(problem.ordered_indices)

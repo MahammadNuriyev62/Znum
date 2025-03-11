@@ -11,6 +11,7 @@ class Promethee:
         self.weights: list[Znum] = table[0]
         self.table_main_part: list[list[Znum]] = table[1:-1]
         self.criteria_types: list[str] = table[-1]
+        self.sorted_table = None
 
         if shouldNormalizeWeight:
             Beast.normalize_weight(self.weights)
@@ -97,4 +98,9 @@ class Promethee:
             numerated_table_to_sort
         )
 
+        self.sorted_table = sorted_table
         return sorted_table
+
+    @property
+    def ordered_indices(self):
+        return [r[0] for r in self.sorted_table]

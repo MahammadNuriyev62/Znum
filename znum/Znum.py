@@ -20,7 +20,12 @@ class Znum:
     Dist = Dist
 
     def __init__(self, A=None, B=None, left=4, right=4, C=None, A_int=None, B_int=None):
-        self._A = np.array(A if A is not None else Znum.get_default_A(), dtype=float)
+        self._A = np.array(
+            [a + 1e-13 * i for i, a in enumerate(A)]
+            if A is not None
+            else Znum.get_default_A(),
+            dtype=float,
+        )
         self._B = np.array(B if B is not None else Znum.get_default_B(), dtype=float)
         self._C = np.array(C if C is not None else Znum.get_default_C(), dtype=float)
         self._dimension = len(self._A)
@@ -80,6 +85,8 @@ class Znum:
         return self.__str__()
 
     def __add__(self, other):
+        if isinstance(other, (int, float)) and other == 0:
+            return self
         return self.math.z_solver_main(self, other, Math.Operations.ADDITION)
 
     def __mul__(self, other):
@@ -139,4 +146,4 @@ class Znum:
     def __radd__(self, other):
         if isinstance(other, (int, float)) and other == 0:
             return self
-        return NotImplemented
+        return self + other
