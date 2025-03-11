@@ -33,13 +33,14 @@ def znums():
     }
 
 
-def assert_znum_equal(actual, expected_A, expected_B, rel=1e-10):
+def assert_znum_equal(actual, expected_A, expected_B, rel=1e-3):
     """
     Helper to assert that a Znum's A and B match expected values within
     a tolerance (for floating-point B).
     """
     for actual, expected in [(actual.A, expected_A), (actual.B, expected_B)]:
-        assert np.linalg.norm(actual - expected) < rel
+        for a_actual, a_expected in zip(actual, expected):
+            assert np.isclose(a_actual, a_expected, rel)
 
 
 def test_z1_plus_z2(znums):

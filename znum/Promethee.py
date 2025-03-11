@@ -104,3 +104,11 @@ class Promethee:
     @property
     def ordered_indices(self):
         return [r[0] for r in self.sorted_table]
+
+    @property
+    def index_of_best_alternative(self):
+        return self.ordered_indices[0]
+
+    @property
+    def index_of_worst_alternative(self):
+        return self.ordered_indices[-1]

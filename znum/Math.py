@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class Math:
     METHOD = "simplex"
-    PRECISION = 12
+    PRECISION = 6
 
     class Operations:
         ADDITION = 1
@@ -53,6 +53,8 @@ class Math:
         # y = k * x + b
         for x1, x2, y1, y2 in result:
             if x1 <= x <= x2 or x1 >= x >= x2:
+                if y1 == y2:
+                    return y1
                 k = (y2 - y1) / (x2 - x1)
                 b = y1 - k * x1
                 y = k * x + b

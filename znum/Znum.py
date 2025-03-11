@@ -20,14 +20,14 @@ class Znum:
     Dist = Dist
 
     def __init__(self, A=None, B=None, left=4, right=4, C=None, A_int=None, B_int=None):
-        self._A = np.array(
-            [a + 1e-13 * i for i, a in enumerate(A)]
-            if A is not None
-            else Znum.get_default_A(),
-            dtype=float,
-        )
+        self._A = np.array(A if A is not None else Znum.get_default_A(), dtype=float)
         self._B = np.array(B if B is not None else Znum.get_default_B(), dtype=float)
         self._C = np.array(C if C is not None else Znum.get_default_C(), dtype=float)
+
+        # IMPORTANT: if all elements of A are equal, membership for all values is 1, number is "exact"
+        if np.all(self._A == self._A[0]):
+            self._C = np.ones(len(self._A))
+
         self._dimension = len(self._A)
         self.left, self.right = left, right
         self.math = Math(self)
