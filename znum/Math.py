@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class Math:
     METHOD = "simplex"
-    PRECISION = 6
+    PRECISION = 13
 
     class Operations:
         ADDITION = 1
@@ -112,7 +112,7 @@ class Math:
         Q[0] = min(matrix, key=lambda x: x[0])[0]
         Q[3] = max(matrix, key=lambda x: x[0])[0]
 
-        matrix = list(filter(lambda x: round(x[1], 6) == 1, matrix))
+        matrix = list(filter(lambda x: round(x[1], Math.PRECISION) == 1, matrix))
 
         Q[1] = min(matrix, key=lambda x: x[0])[0]
         Q[2] = max(matrix, key=lambda x: x[0])[0]

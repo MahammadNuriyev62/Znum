@@ -1,50 +1,27 @@
 from .Beast import Beast
 from .Sort import Sort
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from znum.Znum import Znum
 
 
 class Promethee:
-
-    @staticmethod
-    def solver_main(table: list[list], shouldNormalizeWeight=False):
-        weights: list[Znum] = table[0]
-        table_main_part: list[list[Znum]] = table[1:-1]
-        criteria_types: list[str] = table[-1]
-
-        table_main_part_transpose = tuple(zip(*table_main_part))
-        for column_number, column in enumerate(table_main_part_transpose):
-            Beast.normalize(column, criteria_types[column_number])
-
-        preference_table = Promethee.calculate_preference_table(table_main_part)
+    def __init__(self, table: list[list], shouldNormalizeWeight=False):
+        self.weights: list[Znum] = table[0]
+        self.table_main_part: list[list[Znum]] = table[1:-1]
+        self.criteria_types: list[str] = table[-1]
 
         if shouldNormalizeWeight:
-            Beast.normalize_weight(weights)
-
-        Promethee.weightage(preference_table, weights)
-        Promethee.sum_preferences_of_same_category_pair(preference_table)
-
-        vertical_sum = Promethee.vertical_alternative_sum(preference_table)
-        horizontal_sum = Promethee.horizontal_alternative_sum(preference_table)
-
-        # horizontal_sum - vertical_sum
-        table_to_sort = Beast.subtract_matrix(horizontal_sum, vertical_sum)
-
-        numerated_table_to_sort = Promethee.numerate(table_to_sort)
-        sorted_table = Promethee.sort_numerated_single_column_table(numerated_table_to_sort)
-
-        return sorted_table
+            Beast.normalize_weight(self.weights)
 
     @staticmethod
-    def calculate_preference_table(table_main_part: list[list['Znum']]):
-
+    def calculate_preference_table(table_main_part: list[list["Znum"]]):
         preference_table = []
         for indexAlternative, alternative in enumerate(table_main_part):
             alternativeRow = []
             for indexOtherAlternative, otherAlternative in enumerate(table_main_part):
                 if indexAlternative != indexOtherAlternative:
-
                     otherAlternativeRow = []
                     for criteria, otherCriteria in zip(alternative, otherAlternative):
                         (d1, do1) = Sort.solver_main(criteria, otherCriteria)
@@ -63,28 +40,61 @@ class Promethee:
     def weightage(preference_table, weights):
         for preferenceByCategoriesByAlternatives in preference_table:
             for preferenceByCategories in preferenceByCategoriesByAlternatives:
-                for index, (preferenceByCategory, weight) in enumerate(zip(preferenceByCategories, weights)):
-                    preferenceByCategories[index] = weight * preferenceByCategory  # order is Znum() * Number()
+                for index, (preferenceByCategory, weight) in enumerate(
+                    zip(preferenceByCategories, weights)
+                ):
+                    preferenceByCategories[index] = (
+                        weight * preferenceByCategory
+                    )  # order is Znum() * Number()
 
     @staticmethod
     def sum_preferences_of_same_category_pair(preference_table):
         for preferenceByCategoriesByAlternatives in preference_table:
-            for index, preferenceByCategories in enumerate(preferenceByCategoriesByAlternatives):
-                preferenceByCategoriesByAlternatives[index] = Beast.accurate_sum(preferenceByCategories)
+            for index, preferenceByCategories in enumerate(
+                preferenceByCategoriesByAlternatives
+            ):
+                preferenceByCategoriesByAlternatives[index] = sum(
+                    preferenceByCategories
+                )
 
     @staticmethod
     def vertical_alternative_sum(preference_table):
-        return [Beast.accurate_sum(column) for column in zip(*preference_table)]
+        return [sum(column) for column in zip(*preference_table)]
 
     @staticmethod
     def horizontal_alternative_sum(preference_table):
-        return [Beast.accurate_sum(row) for row in preference_table]
+        return [sum(row) for row in preference_table]
 
     @staticmethod
-    def numerate(single_column_table: list['Znum']):
+    def numerate(single_column_table: list["Znum"]):
         return list(enumerate(single_column_table, 0))
 
     @staticmethod
-    def sort_numerated_single_column_table(single_column_table: list['Znum']):
-        sorted_table = tuple(sorted(single_column_table, reverse=True, key=lambda x: x[1]))
+    def sort_numerated_single_column_table(single_column_table: list["Znum"]):
+        sorted_table = tuple(
+            sorted(single_column_table, reverse=True, key=lambda x: x[1])
+        )
+        return sorted_table
+
+    def solve(self):
+        table_main_part_transpose = tuple(zip(*self.table_main_part))
+        for column_number, column in enumerate(table_main_part_transpose):
+            Beast.normalize(column, self.criteria_types[column_number])
+
+        preference_table = Promethee.calculate_preference_table(self.table_main_part)
+
+        Promethee.weightage(preference_table, self.weights)
+        Promethee.sum_preferences_of_same_category_pair(preference_table)
+
+        vertical_sum = Promethee.vertical_alternative_sum(preference_table)
+        horizontal_sum = Promethee.horizontal_alternative_sum(preference_table)
+
+        # horizontal_sum - vertical_sum
+        table_to_sort = Beast.subtract_matrix(horizontal_sum, vertical_sum)
+
+        numerated_table_to_sort = Promethee.numerate(table_to_sort)
+        sorted_table = Promethee.sort_numerated_single_column_table(
+            numerated_table_to_sort
+        )
+
         return sorted_table

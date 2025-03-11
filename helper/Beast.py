@@ -1,6 +1,7 @@
 import znum.Znum as xusun
 from uuid import uuid4
 
+
 class Beast:
     ZNUM_SIZE = 8
 
@@ -22,7 +23,7 @@ class Beast:
         elif method == Beast.Methods.PROMETHEE:
             return Beast.parse_znums_from_table(table)
         else:
-            raise Exception('Invalid Optimization Method for input Table')
+            raise Exception("Invalid Optimization Method for input Table")
 
     @staticmethod
     def znum_to_row(znum):
@@ -62,12 +63,14 @@ class Beast:
     @staticmethod
     def get_file_path():
         import tkinter.filedialog
+
         filename = tkinter.filedialog.askopenfile()
         return filename.name
 
     @staticmethod
     def read_xlsx(filename: str):
         from openpyxl import load_workbook, Workbook
+
         workbook: Workbook = load_workbook(filename)
 
         table = []
@@ -79,18 +82,37 @@ class Beast:
         return table
 
     @staticmethod
+    def validate_topsis_table(weights, alternatives, types):
+        if weights[0] != "W":
+            raise Exception("First row must be weights")
+        if types[0] != "T":
+            raise Exception("Last row must be types")
+        filtered_weights = [w for w in weights[1:] if w]
+        if len(filtered_weights) != len(alternatives[0]) - 1:
+            raise Exception("Weights and Alternatives must have same number of columns")
+        filtered_types = [t for t in types[1:] if t]
+        if len(filtered_types) != len(filtered_weights) // 8:
+            raise Exception(
+                "There must be the same number of types as the number weights"
+            )
+        return True
+
+    @staticmethod
     def parse_znums_from_table(table: list[list]):
-        weights, extra, main, types = table[0], table[1], table[2: -1], table[-1]
+        Beast.validate_topsis_table(table[0], table[1:-1], table[-1])
+        weights, alternatives, types = table[0], table[1:-1], table[-1]
         weights_modified = Beast.parse_znums_from_row(weights[1:])
-        main_modified = [Beast.parse_znums_from_row(row[1:]) for row in main]
+        alternatives_modified = [
+            Beast.parse_znums_from_row(row[1:]) for row in alternatives
+        ]
         types_modified = [t for t in types[1:] if t]
-        return [weights_modified, *main_modified, types_modified]
+        return [weights_modified, *alternatives_modified, types_modified]
 
     @staticmethod
     def parse_znums_from_row(row: list[int]):
         row_modified = []
         for i in range(0, len(row), Beast.ZNUM_SIZE):
-            znumAsList = row[i:i + Beast.ZNUM_SIZE]
+            znumAsList = row[i : i + Beast.ZNUM_SIZE]
             index = int(Beast.ZNUM_SIZE / 2)
             znum = xusun.Znum(A=znumAsList[:index], B=znumAsList[index:])
             row_modified.append(znum)
@@ -108,31 +130,33 @@ class Beast:
         for row in table_transpose:
             for znum in row:
                 sheet.append(znum.A + znum.B)
-        workbook.save('output.xlsx')
+        workbook.save("output.xlsx")
 
     @staticmethod
     def timer(func):
         import time
+
         def wrapper():
             start = time.time()
             result = func()
             end = time.time()
-            print(f'execution time : {end - start}')
+            print(f"execution time : {end - start}")
             return result
+
         return wrapper
 
     @staticmethod
     def save_array_in_excel(*arrays):
-
         if type(arrays[-1]) == str:
             *arrays, filename = arrays
         else:
-            filename = f'output_{uuid4()}.xlsx'
+            filename = f"output_{uuid4()}.xlsx"
 
-        print(f'{filename = }')
+        print(f"{filename = }")
 
         spacing = 3
         from openpyxl import Workbook
+
         workbook = Workbook()
 
         sheet = workbook.active
