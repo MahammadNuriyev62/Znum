@@ -33,7 +33,7 @@ def znums():
     }
 
 
-def assert_znum_equal(actual, expected_A, expected_B, rel=1e-5):
+def assert_znum_equal(actual, expected_A, expected_B, rel=1e-10):
     """
     Helper to assert that a Znum's A and B match expected values within
     a tolerance (for floating-point B).
@@ -163,4 +163,20 @@ def test_res6(znums):
     #                                           B=[0.011994, 0.05494, 0.11024, 0.357853])"
     expected_A = [12.0, 34.0, 96.333333, 164.0]
     expected_B = [0.011994, 0.05494, 0.11024, 0.357853]
+    assert_znum_equal(result, expected_A, expected_B)
+
+
+def test_multiply_by_int(znums):
+    z1 = znums["z1"]
+    result = z1 * 2
+    expected_A = [0.0, 2.0, 4.0, 6.0]
+    expected_B = [0.0, 0.1, 0.2, 0.3]
+    assert_znum_equal(result, expected_A, expected_B)
+
+
+def test_multiply_by_float(znums):
+    z1 = znums["z1"]
+    result = z1 * 2.3
+    expected_A = [0.0, 2.3, 4.6, 6.9]
+    expected_B = [0.0, 0.1, 0.2, 0.3]
     assert_znum_equal(result, expected_A, expected_B)
