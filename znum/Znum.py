@@ -22,6 +22,9 @@ class Znum:
     def __init__(self, A=None, B=None, left=4, right=4, C=None, A_int=None, B_int=None):
         self._A = np.array(A if A is not None else Znum.get_default_A(), dtype=float)
         self._B = np.array(B if B is not None else Znum.get_default_B(), dtype=float)
+        if self._B[-1] < 0.001:
+            for i in range(len(self._B)):
+                self._B[i] += 1e-6 * (i + 1)
         self._C = np.array(C if C is not None else Znum.get_default_C(), dtype=float)
 
         # IMPORTANT: if all elements of A are equal, membership for all values is 1, number is "exact"
