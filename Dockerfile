@@ -11,6 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api.py .
 COPY templates/ ./templates/
 COPY static/ ./static/
+COPY znum/ ./znum/
+COPY helper/ ./helper/
 
 # Create directories if they don't exist
 RUN mkdir -p templates static/css static/js
