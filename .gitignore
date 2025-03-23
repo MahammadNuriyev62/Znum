@@ -2,3 +2,5 @@
 .DS_Store
 .venv/
 *.pyc
+temp/
+__pycache__/
