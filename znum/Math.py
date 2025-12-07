@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 class Math:
-    METHOD = "simplex"
+    METHOD = "highs-ds"
     PRECISION = 6
 
     class Operations:
