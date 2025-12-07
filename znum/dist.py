@@ -1,9 +1,9 @@
-from .Valid import Valid
-from .Beast import Beast
+from .valid import Valid
+from .utils import Beast
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from znum.Znum import Znum
+    from znum.core import Znum
 
 # QIntermediate = zn.Math.Math.QIntermediate
 
@@ -126,8 +126,8 @@ class Dist:
 
         @staticmethod
         def get_ideal_from_znum(znum, value=0):
-            from .Math import Math
-            from .Znum import Znum
+            from .math_ops import Math
+            from .core import Znum
 
             """
             :type znum: zn.Znum.Znum

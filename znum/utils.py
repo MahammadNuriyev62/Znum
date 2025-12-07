@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from znum.Znum import Znum
+    from znum.core import Znum
 
 
 class Beast:
@@ -70,3 +70,11 @@ class Beast:
         :type matrix: list[list] or list[tuple] or tuple[list] or tuple[tuple]
         """
         return zip(*matrix)
+
+    @staticmethod
+    def accurate_sum(znums: list["Znum"]) -> "Znum":
+        """Sum a list of Znum objects."""
+        result = znums[0]
+        for znum in znums[1:]:
+            result = result + znum
+        return result

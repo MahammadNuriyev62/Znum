@@ -1,9 +1,9 @@
-from .Beast import Beast
-from .Sort import Sort
+from .utils import Beast
+from .sort import Sort
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from znum.Znum import Znum
+    from znum.core import Znum
 
 
 class Promethee:

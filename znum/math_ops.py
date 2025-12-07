@@ -5,7 +5,7 @@ from numpy import array
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from znum.Znum import Znum
+    from znum.core import Znum
 
 
 class Math:
@@ -192,7 +192,7 @@ class Math:
 
     @staticmethod
     def z_solver_main(number_z1, number_z2, operation):
-        from znum.Znum import Znum
+        from znum.core import Znum
 
         matrix = Math.get_matrix_main(number_z1, number_z2, operation)
         matrix = Math.get_minimized_matrix(matrix)

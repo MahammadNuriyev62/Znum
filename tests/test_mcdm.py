@@ -11,10 +11,7 @@ import pytest
 import copy
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from znum.Znum import Znum
-from znum.Beast import Beast
-from znum.Topsis import Topsis
-from znum.Promethee import Promethee
+from znum import Znum, Beast, Topsis, Promethee
 
 
 def create_3x3_mcdm_table():

@@ -2,15 +2,15 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from znum.Znum import Znum
-from .exception import *
+    from znum.core import Znum
+from .exceptions import *
 
 
 class Valid:
     class Decorator:
         @staticmethod
         def filter_znums(args, callback, exception):
-            from znum.Znum import Znum
+            from znum.core import Znum
 
             for arg in args:
                 if type(arg) is Znum:
@@ -31,7 +31,7 @@ class Valid:
         @staticmethod
         def check_if_znums_are_in_same_dimension(func):
             def wrapper(*args):
-                from znum.Znum import Znum
+                from znum.core import Znum
 
                 dimension = None
                 for arg in args:

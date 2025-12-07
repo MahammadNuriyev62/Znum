@@ -8,7 +8,7 @@ The expected values were generated from the current (ground truth) implementatio
 import pytest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from znum.Znum import Znum
+from znum import Znum
 
 
 class TestZnumAddition:

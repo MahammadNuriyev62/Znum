@@ -1,7 +1,7 @@
-from .Beast import Beast
+from .utils import Beast
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from znum.Znum import Znum
+    from znum.core import Znum
 
 
 class Vikor:
@@ -41,7 +41,7 @@ class Vikor:
 
     @staticmethod
     def regret_measure(weights, table_main_part):
-        from znum.Znum import Znum
+        from znum.core import Znum
 
         A_PLUS = Znum([0.99, 0.993, 0.996, 0.999], [0.975, 0.981, 0.986, 0.991])
         A_MINUS = Znum([0.001, 0.002, 0.004, 0.005], [0.95, 0.96, 0.97, 0.98])
@@ -58,7 +58,7 @@ class Vikor:
 
     @staticmethod
     def s_measure(weights, table_main_part):
-        from znum.Znum import Znum
+        from znum.core import Znum
 
         A_PLUS = Znum([0.99, 0.993, 0.996, 0.999], [0.975, 0.981, 0.986, 0.991])
         A_MINUS = Znum([0.001, 0.002, 0.004, 0.005], [0.95, 0.96, 0.97, 0.98])

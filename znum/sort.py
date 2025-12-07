@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from znum.Znum import Znum
+    from znum.core import Znum
 
 
 class Sort:

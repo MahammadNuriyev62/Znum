@@ -6,7 +6,7 @@ The expected values were generated from the current (ground truth) implementatio
 """
 
 import pytest
-from znum.Znum import Znum
+from znum import Znum
 
 
 class TestZnumEquality:

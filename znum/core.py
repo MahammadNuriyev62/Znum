@@ -1,13 +1,13 @@
 import numpy as np
-from .Math import Math
-from .Sort import Sort
-from .Topsis import Topsis
-from .Promethee import Promethee
-from .Beast import Beast
-from .Vikor import Vikor
-from .Valid import Valid
-from .Type import Type
-from .Dist import Dist
+from .math_ops import Math
+from .sort import Sort
+from .topsis import Topsis
+from .promethee import Promethee
+from .utils import Beast
+from .vikor import Vikor
+from .valid import Valid
+from .ztype import Type
+from .dist import Dist
 
 
 class Znum:
