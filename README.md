@@ -50,7 +50,13 @@ alternatives = [[Znum([7, 8, 9, 10], [0.6, 0.7, 0.8, 0.9])]]
 criteria_types = [Beast.CriteriaType.BENEFIT]
 
 table = [weights, *alternatives, criteria_types]
-result = Topsis.solver_main(table)
+topsis = Topsis(table)
+result = topsis.solve()
+
+# Access results
+best_idx = topsis.index_of_best_alternative
+worst_idx = topsis.index_of_worst_alternative
+ranking = topsis.ordered_indices
 ```
 
 ### PROMETHEE
@@ -61,6 +67,11 @@ from znum import Znum, Promethee, Beast
 table = [weights, *alternatives, criteria_types]
 promethee = Promethee(table)
 sorted_alternatives = promethee.solve()
+
+# Access results
+best_idx = promethee.index_of_best_alternative
+worst_idx = promethee.index_of_worst_alternative
+ranking = promethee.ordered_indices
 ```
 
 ## Development
