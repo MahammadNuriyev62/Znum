@@ -79,7 +79,7 @@ class Topsis:
         """Return alternative indices sorted by closeness coefficient (best first)."""
         if self._result is None:
             raise ValueError("Must call solve() before accessing ordered_indices")
-        return sorted(range(len(self._result)), key=lambda i: self._result[i], reverse=True)
+        return sorted(range(len(self._result)), key=lambda i: self._result[i], reverse=False)
 
     @property
     def index_of_best_alternative(self) -> int:
