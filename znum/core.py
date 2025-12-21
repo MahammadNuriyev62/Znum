@@ -123,6 +123,8 @@ class Znum:
         return do < _do
 
     def __eq__(self, o):
+        if not isinstance(o, Znum):
+            return False
         d, do = Znum.Sort.solver_main(self, o)
         _d, _do = Znum.Sort.solver_main(o, self)
         return do == 1 and _do == 1
