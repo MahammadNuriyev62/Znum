@@ -48,9 +48,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/maganuriyev/znum"
-Repository = "https://github.com/maganuriyev/znum"
-Issues = "https://github.com/maganuriyev/znum/issues"
+Homepage = "https://github.com/MahammadNuriyev62/Znum"
+Repository = "https://github.com/MahammadNuriyev62/Znum"
+Issues = "https://github.com/MahammadNuriyev62/Znum/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["znum"]
