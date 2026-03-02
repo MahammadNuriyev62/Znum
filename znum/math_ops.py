@@ -87,31 +87,39 @@ class Math:
 
     def get_matrix(self) -> np.ndarray:
         """Build optimization matrix via linear programming for each B intermediate value."""
-        d = _PENALTY_COEFFICIENT
+        a_vals = np.asarray(self.root.A_int["value"])
+        b_vals = np.asarray(self.root.B_int["value"])
+        size = len(a_vals)
+        n_cols = len(b_vals)
 
+        d = _PENALTY_COEFFICIENT
         i37 = self._weighted_centroid(self.root.A_int)
-        size = len(self.root.A_int["value"])
         c = np.concatenate([np.zeros(size), (d, d)], axis=0)
         bounds = np.full((size + 2, 2), (0, 1))
-
         A_eq = array(
             [
                 np.concatenate((self.root.A_int["memb"], (-d, d))),
                 np.concatenate(([1] * size, (0, 0))),
-                np.concatenate((self.root.A_int["value"], (0, 0))),
+                np.concatenate((a_vals, (0, 0))),
             ]
         )
+
+        # When all intermediate values are constant (e.g. ideal Z-numbers),
+        # all LPs are identical — solve once and replicate.
+        if np.all(a_vals == a_vals[0]) and np.all(b_vals == b_vals[0]):
+            col = optimize.linprog(
+                c, A_eq=A_eq, b_eq=array((b_vals[0], 1, i37)),
+                bounds=bounds, method=_LP_METHOD,
+            ).x[:-2]
+            return np.tile(col, (n_cols, 1)).T
 
         return np.array(
             [
                 optimize.linprog(
-                    c,
-                    A_eq=A_eq,
-                    b_eq=array((b20, 1, i37)),
-                    bounds=bounds,
-                    method=_LP_METHOD,
+                    c, A_eq=A_eq, b_eq=array((b20, 1, i37)),
+                    bounds=bounds, method=_LP_METHOD,
                 ).x[:-2]
-                for b20 in self.root.B_int["value"]
+                for b20 in b_vals
             ]
         ).T
 

@@ -79,21 +79,22 @@ class Promethee:
     @staticmethod
     def _calculate_preference_table(table_main_part: list[list[Znum]]) -> list[list]:
         """Build the pairwise preference matrix using fuzzy dominance comparisons."""
-        preference_table = []
-        for i_alt, alternative in enumerate(table_main_part):
-            alt_row = []
-            for j_alt, other_alt in enumerate(table_main_part):
-                if i_alt != j_alt:
-                    pairwise_prefs = []
-                    for criterion, other_criterion in zip(alternative, other_alt):
-                        (_, do1) = Sort.solver_main(criterion, other_criterion)
-                        (_, do2) = Sort.solver_main(other_criterion, criterion)
-                        d = max(do1 - do2, 0)
-                        pairwise_prefs.append(d)
-                    alt_row.append(pairwise_prefs)
-                else:
-                    alt_row.append([])
-            preference_table.append(alt_row)
+        n = len(table_main_part)
+        preference_table = [[[] for _ in range(n)] for _ in range(n)]
+
+        # Only compute upper triangle — each Sort pair gives both directions.
+        for i in range(n):
+            for j in range(i + 1, n):
+                prefs_ij = []
+                prefs_ji = []
+                for c_i, c_j in zip(table_main_part[i], table_main_part[j]):
+                    (_, do1) = Sort.solver_main(c_i, c_j)
+                    (_, do2) = Sort.solver_main(c_j, c_i)
+                    prefs_ij.append(max(do1 - do2, 0))
+                    prefs_ji.append(max(do2 - do1, 0))
+                preference_table[i][j] = prefs_ij
+                preference_table[j][i] = prefs_ji
+
         return preference_table
 
     @staticmethod
