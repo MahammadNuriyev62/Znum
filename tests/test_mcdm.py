@@ -116,6 +116,23 @@ def create_4x4_mcdm_table():
     return [weights, a1, a2, a3, a4, criteria_types]
 
 
+def create_obvious_3x1_benefit_table():
+    """Create 3 alternatives x 1 BENEFIT criterion with obvious ordering.
+
+    Alt 0 (Big):    A=[80, 90, 100, 110]
+    Alt 1 (Medium): A=[40, 50, 60, 70]
+    Alt 2 (Small):  A=[1, 2, 3, 4]
+
+    Expected ranking: 0 > 1 > 2
+    """
+    weights = [Znum(A=[0.4, 0.5, 0.6, 0.7], B=[0.3, 0.4, 0.5, 0.6])]
+    big = [Znum(A=[80, 90, 100, 110], B=[0.7, 0.8, 0.9, 0.95])]
+    medium = [Znum(A=[40, 50, 60, 70], B=[0.7, 0.8, 0.9, 0.95])]
+    small = [Znum(A=[1, 2, 3, 4], B=[0.7, 0.8, 0.9, 0.95])]
+    criteria_types = [Beast.CriteriaType.BENEFIT]
+    return [weights, big, medium, small, criteria_types]
+
+
 class TestPromethee:
     """Tests for Promethee MCDM method."""
 
@@ -203,6 +220,19 @@ class TestPromethee:
         assert len(ordered) == 3
         # Should contain all indices 0, 1, 2
         assert set(ordered) == {0, 1, 2}
+
+    def test_promethee_obvious_3x1_benefit(self):
+        """Test Promethee with 3 obviously ordered alternatives and 1 BENEFIT criterion."""
+        table = create_obvious_3x1_benefit_table()
+        table_copy = copy.deepcopy(table)
+
+        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        result = promethee.solve()
+
+        # Big > Medium > Small
+        assert promethee.ordered_indices == [0, 1, 2]
+        assert promethee.index_of_best_alternative == 0
+        assert promethee.index_of_worst_alternative == 2
 
 
 class TestTopsis:
@@ -361,6 +391,40 @@ class TestTopsis:
 
         for value in result:
             assert 0 <= value <= 1
+
+    def test_topsis_obvious_3x1_benefit_hellinger(self):
+        """Test TOPSIS Hellinger with 3 obviously ordered alternatives and 1 BENEFIT criterion."""
+        table = create_obvious_3x1_benefit_table()
+        table_copy = copy.deepcopy(table)
+
+        topsis = Topsis(table_copy, shouldNormalizeWeight=False, distanceType=Topsis.DistanceMethod.HELLINGER)
+        result = topsis.solve()
+
+        # solver_main raw scores: highest = best
+        assert result.index(max(result)) == 0
+        assert result.index(min(result)) == 2
+
+        # Big > Medium > Small
+        assert topsis.ordered_indices == [0, 1, 2]
+        assert topsis.index_of_best_alternative == 0
+        assert topsis.index_of_worst_alternative == 2
+
+    def test_topsis_obvious_3x1_benefit_simple(self):
+        """Test TOPSIS Simple with 3 obviously ordered alternatives and 1 BENEFIT criterion."""
+        table = create_obvious_3x1_benefit_table()
+        table_copy = copy.deepcopy(table)
+
+        topsis = Topsis(table_copy, shouldNormalizeWeight=False, distanceType=Topsis.DistanceMethod.SIMPLE)
+        result = topsis.solve()
+
+        # solver_main raw scores: highest = best
+        assert result.index(max(result)) == 0
+        assert result.index(min(result)) == 2
+
+        # Big > Medium > Small
+        assert topsis.ordered_indices == [0, 1, 2]
+        assert topsis.index_of_best_alternative == 0
+        assert topsis.index_of_worst_alternative == 2
 
 
 class TestMcdmConsistency:
