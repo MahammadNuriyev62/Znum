@@ -1,9 +1,8 @@
-"""
-Znum - Z-number data type for fuzzy arithmetic and multi-criteria decision making.
+"""Znum - Z-number arithmetic and multi-criteria decision making.
 
-A Z-number is a fuzzy number with two parts:
-- A: The main fuzzy set values (restriction on values)
-- B: The confidence/belief values (reliability of A)
+A Z-number Z = (A, B) is a fuzzy number where:
+- A: The restriction on values (trapezoidal fuzzy number)
+- B: The reliability/confidence of A
 
 Example:
     >>> from znum import Znum
@@ -15,32 +14,28 @@ Example:
 
 from .core import Znum
 from .topsis import Topsis
-from .vikor import Vikor
 from .promethee import Promethee
-from .utils import Beast
+from .utils import MCDMUtils
 from .exceptions import (
     InvalidAPartOfZnumException,
     InvalidBPartOfZnumException,
     InvalidZnumDimensionException,
     InvalidZnumCPartDimensionException,
-    IncompatibleABPartsException,
     ZnumMustBeEvenException,
     ZnumsMustBeInSameDimensionException,
 )
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "Znum",
     "Topsis",
-    "Vikor",
     "Promethee",
-    "Beast",
+    "MCDMUtils",
     "InvalidAPartOfZnumException",
     "InvalidBPartOfZnumException",
     "InvalidZnumDimensionException",
     "InvalidZnumCPartDimensionException",
-    "IncompatibleABPartsException",
     "ZnumMustBeEvenException",
     "ZnumsMustBeInSameDimensionException",
 ]

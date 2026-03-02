@@ -1,16 +1,27 @@
+"""Fuzzy arithmetic operations for Z-numbers using linear programming."""
+from __future__ import annotations
+
 import math
-import numpy as np
-from scipy import optimize
-from numpy import array
 from typing import TYPE_CHECKING
+
+import numpy as np
+from numpy import array
+from scipy import optimize
 
 if TYPE_CHECKING:
     from znum.core import Znum
 
+_LP_METHOD = "highs-ds"
+_PRECISION = 6
+_PENALTY_COEFFICIENT = 10_000
+
 
 class Math:
-    METHOD = "highs-ds"
-    PRECISION = 6
+    """Core arithmetic engine for Z-number operations.
+
+    Uses linear programming (scipy.optimize.linprog) to compute fuzzy
+    arithmetic results while preserving membership constraints.
+    """
 
     class Operations:
         ADDITION = 1
@@ -22,46 +33,46 @@ class Math:
         VALUE = "value"
         MEMBERSHIP = "memb"
 
-    operationFunctions = {
+    _operation_functions = {
         Operations.ADDITION: lambda x, y: x + y,
         Operations.SUBTRACTION: lambda x, y: x - y,
         Operations.MULTIPLICATION: lambda x, y: x * y,
         Operations.DIVISION: lambda x, y: x / y,
     }
 
-    def __init__(self, root: "Znum"):
+    def __init__(self, root: Znum) -> None:
         self.root = root
 
     @staticmethod
-    def get_default_membership(size):
+    def get_default_membership(size: int) -> list[float]:
+        """Generate a symmetric triangular membership function of given size."""
         half = math.ceil(size / 2)
         arr = [i * (1 / (half - 1)) for i in range(half)]
         return (arr if size % 2 == 0 else arr[:-1]) + list(reversed(arr))
 
-    def get_membership(self, Q, n):
-        return self.get_y(n, Q, self.root.C)
+    def get_membership(self, Q: np.ndarray, n: float) -> float:
+        """Get the membership value at point n by linear interpolation on Q."""
+        return self._interpolate(n, Q, self.root.C)
 
-    def get_y(self, x, xs, ys):
-        result = [
+    def _interpolate(self, x: float, xs: np.ndarray, ys: np.ndarray) -> float:
+        """Piecewise linear interpolation: find y for a given x."""
+        segments = [
             [x1, x2, y1, y2]
-            for [x1, x2, y1, y2] in zip(xs[1:], xs[:-1], ys[1:], ys[:-1])
+            for x1, x2, y1, y2 in zip(xs[1:], xs[:-1], ys[1:], ys[:-1])
         ]
-        # k * x1 + b = y1
-        # k * x2 + b = y2
-        # k = (y2 - y1) / (x2 - x1)
-        # b = y1 - k * x1
-        # y = k * x + b
-        for x1, x2, y1, y2 in result:
+        for x1, x2, y1, y2 in segments:
             if x1 <= x <= x2 or x1 >= x >= x2:
                 if y1 == y2:
                     return y1
+                if x1 == x2:
+                    return max(y1, y2)
                 k = (y2 - y1) / (x2 - x1)
                 b = y1 - k * x1
-                y = k * x + b
-                return y
+                return k * x + b
         return 0
 
-    def get_intermediate(self, Q):
+    def get_intermediate(self, Q: np.ndarray) -> dict[str, np.ndarray]:
+        """Compute intermediate value/membership representation for LP solving."""
         left_part = (Q[1] - Q[0]) / self.root.left
         right_part = (Q[3] - Q[2]) / self.root.right
 
@@ -69,16 +80,17 @@ class Math:
             (
                 [round(Q[0] + i * left_part, 13) for i in range(self.root.left + 1)],
                 [round(Q[2] + i * right_part, 13) for i in range(self.root.right + 1)],
-                # [1 if self.root.type.isTriangle else 0:]
             )
         )
         Q_int_memb = np.array([self.get_membership(Q, i) for i in Q_int_value])
         return {"value": Q_int_value, "memb": Q_int_memb}
 
-    def get_matrix(self):
-        d = 10000
+    def get_matrix(self) -> np.ndarray:
+        """Build optimization matrix via linear programming for each B intermediate value."""
+        d = _PENALTY_COEFFICIENT
 
-        i37, size = self.get_i37(self.root.A_int), len(self.root.A_int["value"])
+        i37 = self._weighted_centroid(self.root.A_int)
+        size = len(self.root.A_int["value"])
         c = np.concatenate([np.zeros(size), (d, d)], axis=0)
         bounds = np.full((size + 2, 2), (0, 1))
 
@@ -97,101 +109,91 @@ class Math:
                     A_eq=A_eq,
                     b_eq=array((b20, 1, i37)),
                     bounds=bounds,
-                    method=Math.METHOD,
+                    method=_LP_METHOD,
                 ).x[:-2]
                 for b20 in self.root.B_int["value"]
             ]
         ).T
 
     @staticmethod
-    def get_i37(Q_int):
+    def _weighted_centroid(Q_int: dict[str, np.ndarray]) -> float:
+        """Compute the membership-weighted centroid of intermediate values."""
         return np.dot(Q_int["value"], Q_int["memb"]) / np.sum(Q_int["memb"])
 
     @staticmethod
-    def get_Q_from_matrix(matrix):
+    def get_Q_from_matrix(matrix: list[list[float]]) -> list[float]:
+        """Extract the 4-corner trapezoidal Q values from an optimization matrix."""
         Q = np.empty(4)
 
         Q[0] = min(matrix, key=lambda x: x[0])[0]
         Q[3] = max(matrix, key=lambda x: x[0])[0]
 
-        matrix = list(filter(lambda x: round(x[1], Math.PRECISION) == 1, matrix))
+        matrix = list(filter(lambda x: round(x[1], _PRECISION) == 1, matrix))
 
         Q[1] = min(matrix, key=lambda x: x[0])[0]
         Q[2] = max(matrix, key=lambda x: x[0])[0]
 
-        Q = [round(i, Math.PRECISION) for i in Q]
-        return Q
+        return [round(i, _PRECISION) for i in Q]
 
     @staticmethod
-    def get_matrix_main(number_z1: "Znum", number_z2: "Znum", operation: int):
-        """
-        option
-        1 - add,
-        2 - sub,
-        3 - mul,
-        4 - div,
-        """
-        matrix, matrix1, matrix2 = (
-            [],
-            number_z1.math.get_matrix(),
-            number_z2.math.get_matrix(),
-        )
-        for i, (A1_int_element_value, A1_int_element_memb) in enumerate(
+    def get_matrix_main(number_z1: Znum, number_z2: Znum, operation: int) -> list:
+        """Build the combined operation matrix for two Z-numbers."""
+        matrix: list = []
+        matrix1 = number_z1.math.get_matrix()
+        matrix2 = number_z2.math.get_matrix()
+
+        for i, (a1_val, a1_memb) in enumerate(
             zip(number_z1.A_int["value"], number_z1.A_int["memb"])
         ):
-            for j, (A2_int_element_value, A2_int_element_memb) in enumerate(
+            for j, (a2_val, a2_memb) in enumerate(
                 zip(number_z2.A_int["value"], number_z2.A_int["memb"])
             ):
                 row = [
-                    Math.operationFunctions[operation](
-                        A1_int_element_value, A2_int_element_value
-                    ),
-                    min(A1_int_element_memb, A2_int_element_memb),
+                    Math._operation_functions[operation](a1_val, a2_val),
+                    min(a1_memb, a2_memb),
                 ]
-                # element1 * element2 for element1 in matrix1[i] for element2 in matrix2[j]
                 matrix.append(row + np.outer(matrix1[i], matrix2[j]).flatten().tolist())
         return matrix
 
     @staticmethod
-    def get_minimized_matrix(matrix):
-        minimized_matrix = {}
+    def get_minimized_matrix(matrix: list) -> list:
+        """Merge rows with identical first values, keeping max membership."""
+        minimized: dict = {}
         for row in matrix:
-            if row[0] in minimized_matrix:
-                # find max of col2
-                minimized_matrix[row[0]][0] = max(minimized_matrix[row[0]][0], row[1])
-
-                # add respective probabilities
+            if row[0] in minimized:
+                minimized[row[0]][0] = max(minimized[row[0]][0], row[1])
                 for i, n in enumerate(row[2:]):
-                    minimized_matrix[row[0]][i + 1] += n
+                    minimized[row[0]][i + 1] += n
             else:
-                minimized_matrix[row[0]] = row[1:]
-        minimized_matrix = [[key] + minimized_matrix[key] for key in minimized_matrix]
-        return minimized_matrix
+                minimized[row[0]] = row[1:]
+        return [[key] + minimized[key] for key in minimized]
 
     @staticmethod
-    def get_prob_pos(matrix, Number_z1, Number_z2):
+    def get_prob_pos(matrix: list, number_z1: Znum, number_z2: Znum) -> list:
+        """Compute probability-possibility distribution for the result."""
         matrix_by_column = list(zip(*matrix))
         column1 = matrix_by_column[1]
         matrix_by_column = matrix_by_column[2:]
 
         final_matrix = []
-
-        size1 = len(Number_z1.B_int["memb"])
-        size2 = len(Number_z2.B_int["memb"])
+        size1 = len(number_z1.B_int["memb"])
+        size2 = len(number_z2.B_int["memb"])
 
         for i, column in enumerate(matrix_by_column):
             row = [
-                sum([i * j for i, j in zip(column1, column)]),
+                sum([val * col for val, col in zip(column1, column)]),
                 min(
-                    Number_z1.B_int["memb"][i // size1],
-                    Number_z2.B_int["memb"][i % size2],
+                    number_z1.B_int["memb"][i // size1],
+                    number_z2.B_int["memb"][i % size2],
                 ),
             ]
             final_matrix.append(row)
         return final_matrix
 
     @staticmethod
-    def z_solver_main(number_z1, number_z2, operation):
+    def z_solver_main(number_z1: Znum, number_z2: Znum, operation: int) -> Znum:
+        """Perform a fuzzy arithmetic operation and return the resulting Z-number."""
+        # Runtime import to avoid circular dependency: core.py -> math_ops.py -> core.py
         from znum.core import Znum
 
         matrix = Math.get_matrix_main(number_z1, number_z2, operation)

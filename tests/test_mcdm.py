@@ -11,7 +11,7 @@ import pytest
 import copy
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from znum import Znum, Beast, Topsis, Promethee
+from znum import Znum, MCDMUtils, Topsis, Promethee
 
 
 def create_3x3_mcdm_table():
@@ -42,7 +42,7 @@ def create_3x3_mcdm_table():
     alt3 = [a3_c1, a3_c2, a3_c3]
 
     # Criteria types: Benefit (B) or Cost (C)
-    criteria_types = [Beast.CriteriaType.BENEFIT, Beast.CriteriaType.BENEFIT, Beast.CriteriaType.COST]
+    criteria_types = [MCDMUtils.CriteriaType.BENEFIT, MCDMUtils.CriteriaType.BENEFIT, MCDMUtils.CriteriaType.COST]
 
     return [weights, alt1, alt2, alt3, criteria_types]
 
@@ -64,7 +64,7 @@ def create_2x2_mcdm_table():
     alt1 = [a1_c1, a1_c2]
     alt2 = [a2_c1, a2_c2]
 
-    criteria_types = [Beast.CriteriaType.BENEFIT, Beast.CriteriaType.COST]
+    criteria_types = [MCDMUtils.CriteriaType.BENEFIT, MCDMUtils.CriteriaType.COST]
 
     return [weights, alt1, alt2, criteria_types]
 
@@ -110,8 +110,8 @@ def create_4x4_mcdm_table():
     ]
 
     # B=Benefit, C=Cost
-    criteria_types = [Beast.CriteriaType.BENEFIT, Beast.CriteriaType.BENEFIT,
-                      Beast.CriteriaType.COST, Beast.CriteriaType.BENEFIT]
+    criteria_types = [MCDMUtils.CriteriaType.BENEFIT, MCDMUtils.CriteriaType.BENEFIT,
+                      MCDMUtils.CriteriaType.COST, MCDMUtils.CriteriaType.BENEFIT]
 
     return [weights, a1, a2, a3, a4, criteria_types]
 
@@ -129,7 +129,7 @@ def create_obvious_3x1_benefit_table():
     big = [Znum(A=[80, 90, 100, 110], B=[0.7, 0.8, 0.9, 0.95])]
     medium = [Znum(A=[40, 50, 60, 70], B=[0.7, 0.8, 0.9, 0.95])]
     small = [Znum(A=[1, 2, 3, 4], B=[0.7, 0.8, 0.9, 0.95])]
-    criteria_types = [Beast.CriteriaType.BENEFIT]
+    criteria_types = [MCDMUtils.CriteriaType.BENEFIT]
     return [weights, big, medium, small, criteria_types]
 
 
@@ -141,7 +141,7 @@ class TestPromethee:
         table = create_3x3_mcdm_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
 
         # Expected results from ground truth
@@ -154,7 +154,7 @@ class TestPromethee:
         table = create_3x3_mcdm_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=True)
+        promethee = Promethee(table_copy, normalize_weights=True)
         result = promethee.solve()
 
         # Expected results from ground truth
@@ -167,7 +167,7 @@ class TestPromethee:
         table = create_2x2_mcdm_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
 
         # Expected results from ground truth
@@ -180,7 +180,7 @@ class TestPromethee:
         table = create_4x4_mcdm_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
 
         # Expected results from ground truth
@@ -193,7 +193,7 @@ class TestPromethee:
         table = create_3x3_mcdm_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
 
         # Result should be a tuple of tuples
@@ -211,7 +211,7 @@ class TestPromethee:
         table = create_3x3_mcdm_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         promethee.solve()
 
         ordered = promethee.ordered_indices
@@ -226,7 +226,7 @@ class TestPromethee:
         table = create_obvious_3x1_benefit_table()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
 
         # Big > Medium > Small
@@ -245,8 +245,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         # Expected results from ground truth
@@ -266,8 +266,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.SIMPLE
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.SIMPLE
         )
 
         # Expected results from ground truth
@@ -287,8 +287,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=True,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=True,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         # Expected results from ground truth
@@ -308,8 +308,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         # Expected results from ground truth
@@ -329,8 +329,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.SIMPLE
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.SIMPLE
         )
 
         # Expected results from ground truth
@@ -349,8 +349,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         # Expected results from ground truth
@@ -370,8 +370,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         assert isinstance(result, list)
@@ -385,8 +385,8 @@ class TestTopsis:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         for value in result:
@@ -397,7 +397,7 @@ class TestTopsis:
         table = create_obvious_3x1_benefit_table()
         table_copy = copy.deepcopy(table)
 
-        topsis = Topsis(table_copy, shouldNormalizeWeight=False, distanceType=Topsis.DistanceMethod.HELLINGER)
+        topsis = Topsis(table_copy, normalize_weights=False, distance_type=Topsis.DistanceMethod.HELLINGER)
         result = topsis.solve()
 
         # solver_main raw scores: highest = best
@@ -414,7 +414,7 @@ class TestTopsis:
         table = create_obvious_3x1_benefit_table()
         table_copy = copy.deepcopy(table)
 
-        topsis = Topsis(table_copy, shouldNormalizeWeight=False, distanceType=Topsis.DistanceMethod.SIMPLE)
+        topsis = Topsis(table_copy, normalize_weights=False, distance_type=Topsis.DistanceMethod.SIMPLE)
         result = topsis.solve()
 
         # solver_main raw scores: highest = best
@@ -436,7 +436,7 @@ class TestMcdmConsistency:
 
         # Promethee
         table_promethee = copy.deepcopy(table)
-        promethee = Promethee(table_promethee, shouldNormalizeWeight=False)
+        promethee = Promethee(table_promethee, normalize_weights=False)
         promethee.solve()
         promethee_best = promethee.index_of_best_alternative
 
@@ -444,8 +444,8 @@ class TestMcdmConsistency:
         table_topsis = copy.deepcopy(table)
         topsis_result = Topsis.solver_main(
             table_topsis,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
         topsis_best = topsis_result.index(max(topsis_result))
 
@@ -458,7 +458,7 @@ class TestMcdmConsistency:
 
         # Promethee
         table_promethee = copy.deepcopy(table)
-        promethee = Promethee(table_promethee, shouldNormalizeWeight=False)
+        promethee = Promethee(table_promethee, normalize_weights=False)
         promethee.solve()
         promethee_best = promethee.index_of_best_alternative
 
@@ -466,8 +466,8 @@ class TestMcdmConsistency:
         table_topsis = copy.deepcopy(table)
         topsis_result = Topsis.solver_main(
             table_topsis,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
         topsis_best = topsis_result.index(max(topsis_result))
 
@@ -480,7 +480,7 @@ class TestMcdmConsistency:
 
         # Promethee
         table_promethee = copy.deepcopy(table)
-        promethee = Promethee(table_promethee, shouldNormalizeWeight=False)
+        promethee = Promethee(table_promethee, normalize_weights=False)
         promethee.solve()
         promethee_best = promethee.index_of_best_alternative
 
@@ -488,8 +488,8 @@ class TestMcdmConsistency:
         table_topsis = copy.deepcopy(table)
         topsis_result = Topsis.solver_main(
             table_topsis,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
         topsis_best = topsis_result.index(max(topsis_result))
 
@@ -497,16 +497,16 @@ class TestMcdmConsistency:
         assert promethee_best == topsis_best
 
 
-class TestBeastUtilities:
-    """Tests for Beast utility functions used in MCDM."""
+class TestMCDMUtilsUtilities:
+    """Tests for MCDMUtils utility functions used in MCDM."""
 
     def test_criteria_type_constants(self):
-        """Test Beast CriteriaType constants."""
-        assert Beast.CriteriaType.COST == "C"
-        assert Beast.CriteriaType.BENEFIT == "B"
+        """Test MCDMUtils CriteriaType constants."""
+        assert MCDMUtils.CriteriaType.COST == "C"
+        assert MCDMUtils.CriteriaType.BENEFIT == "B"
 
     def test_subtract_matrix(self):
-        """Test Beast.subtract_matrix function."""
+        """Test MCDMUtils.subtract_matrix function."""
         z1 = Znum(A=[1, 2, 3, 4], B=[0.1, 0.2, 0.3, 0.4])
         z2 = Znum(A=[2, 3, 4, 5], B=[0.2, 0.3, 0.4, 0.5])
         z3 = Znum(A=[0.5, 1, 1.5, 2], B=[0.05, 0.1, 0.15, 0.2])
@@ -514,35 +514,35 @@ class TestBeastUtilities:
         o1 = [z2, z3]
         o2 = [z1, z1]
 
-        result = Beast.subtract_matrix(o1, o2)
+        result = MCDMUtils.subtract_matrix(o1, o2)
 
         assert len(result) == 2
         assert isinstance(result[0], Znum)
         assert isinstance(result[1], Znum)
 
     def test_parse_table(self):
-        """Test Beast.parse_table function."""
+        """Test MCDMUtils.parse_table function."""
         table = create_3x3_mcdm_table()
 
-        weights, table_main_part, criteria_types = Beast.parse_table(table)
+        weights, table_main_part, criteria_types = MCDMUtils.parse_table(table)
 
         assert len(weights) == 3
         assert len(table_main_part) == 3
         assert len(criteria_types) == 3
 
     def test_numerate(self):
-        """Test Beast.numerate function."""
+        """Test MCDMUtils.numerate function."""
         z1 = Znum(A=[1, 2, 3, 4], B=[0.1, 0.2, 0.3, 0.4])
         z2 = Znum(A=[2, 3, 4, 5], B=[0.2, 0.3, 0.4, 0.5])
 
-        result = Beast.numerate([z1, z2])
+        result = MCDMUtils.numerate([z1, z2])
 
         assert result == [(1, z1), (2, z2)]
 
     def test_transpose_matrix(self):
-        """Test Beast.transpose_matrix function."""
+        """Test MCDMUtils.transpose_matrix function."""
         matrix = [[1, 2, 3], [4, 5, 6]]
-        result = list(Beast.transpose_matrix(matrix))
+        result = list(MCDMUtils.transpose_matrix(matrix))
 
         assert result == [(1, 4), (2, 5), (3, 6)]
 
@@ -581,20 +581,20 @@ class TestMcdmWithDifferentCriteriaTypes:
         ]
 
         # All BENEFIT
-        criteria_types = [Beast.CriteriaType.BENEFIT, Beast.CriteriaType.BENEFIT]
+        criteria_types = [MCDMUtils.CriteriaType.BENEFIT, MCDMUtils.CriteriaType.BENEFIT]
         table = [weights, a1, a2, criteria_types]
 
         # Should not raise any errors
         table_copy = copy.deepcopy(table)
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
         assert result is not None
 
         table_copy2 = copy.deepcopy(table)
         topsis_result = Topsis.solver_main(
             table_copy2,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
         assert len(topsis_result) == 2
 
@@ -614,20 +614,20 @@ class TestMcdmWithDifferentCriteriaTypes:
         ]
 
         # All COST
-        criteria_types = [Beast.CriteriaType.COST, Beast.CriteriaType.COST]
+        criteria_types = [MCDMUtils.CriteriaType.COST, MCDMUtils.CriteriaType.COST]
         table = [weights, a1, a2, criteria_types]
 
         # Should not raise any errors
         table_copy = copy.deepcopy(table)
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
         assert result is not None
 
         table_copy2 = copy.deepcopy(table)
         topsis_result = Topsis.solver_main(
             table_copy2,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
         assert len(topsis_result) == 2
 
@@ -636,15 +636,15 @@ class TestMcdmWithDifferentCriteriaTypes:
         table = create_3x3_mcdm_table()  # Has both B and C
 
         table_copy = copy.deepcopy(table)
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         result = promethee.solve()
         assert result is not None
 
         table_copy2 = copy.deepcopy(table)
         topsis_result = Topsis.solver_main(
             table_copy2,
-            shouldNormalizeWeight=False,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=False,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
         assert len(topsis_result) == 3
 
@@ -711,7 +711,7 @@ class TestMcdmWithInputCsv:
         table = parse_input_csv_data()
         table_copy = copy.deepcopy(table)
 
-        promethee = Promethee(table_copy, shouldNormalizeWeight=True)
+        promethee = Promethee(table_copy, normalize_weights=True)
         promethee.solve()
 
         # Expected results from input.csv
@@ -730,8 +730,8 @@ class TestMcdmWithInputCsv:
 
         result = Topsis.solver_main(
             table_copy,
-            shouldNormalizeWeight=True,
-            distanceType=Topsis.DistanceMethod.HELLINGER
+            normalize_weights=True,
+            distance_type=Topsis.DistanceMethod.HELLINGER
         )
 
         # Expected TOPSIS scores for each alternative
@@ -768,7 +768,7 @@ class TestMcdmModifiesTable:
         table = create_3x3_mcdm_table()
         original_a1_c1_A = table[1][0].A.copy()
 
-        promethee = Promethee(table, shouldNormalizeWeight=False)
+        promethee = Promethee(table, normalize_weights=False)
         promethee.solve()
 
         # Table should be modified after solve
@@ -781,7 +781,7 @@ class TestMcdmModifiesTable:
         original_a1_c1_A = table[1][0].A.copy()
 
         table_copy = copy.deepcopy(table)
-        promethee = Promethee(table_copy, shouldNormalizeWeight=False)
+        promethee = Promethee(table_copy, normalize_weights=False)
         promethee.solve()
 
         # Original table should be unchanged

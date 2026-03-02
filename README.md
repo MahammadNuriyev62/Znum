@@ -6,7 +6,7 @@ A Z-number is a fuzzy number with two components:
 - **A**: The main fuzzy set values (restriction on values)
 - **B**: The confidence/belief values (reliability of A)
 
-Znum supports full mathematical operations (addition, subtraction, multiplication, division, power), comparison operators, and includes implementations of TOPSIS, VIKOR, and PROMETHEE optimization methods.
+Znum supports full mathematical operations (addition, subtraction, multiplication, division, power), comparison operators, and includes implementations of TOPSIS and PROMETHEE optimization methods.
 
 ## Installation
 
@@ -42,12 +42,12 @@ z7 = z1 ** 2
 ### TOPSIS
 
 ```python
-from znum import Znum, Topsis, Beast
+from znum import Znum, Topsis, MCDMUtils
 
 # Create weights, alternatives, and criteria types
 weights = [Znum([0.2, 0.3, 0.4, 0.5], [0.1, 0.2, 0.3, 0.4])]
 alternatives = [[Znum([7, 8, 9, 10], [0.6, 0.7, 0.8, 0.9])]]
-criteria_types = [Beast.CriteriaType.BENEFIT]
+criteria_types = [MCDMUtils.CriteriaType.BENEFIT]
 
 table = [weights, *alternatives, criteria_types]
 topsis = Topsis(table)
@@ -62,7 +62,7 @@ ranking = topsis.ordered_indices
 ### PROMETHEE
 
 ```python
-from znum import Znum, Promethee, Beast
+from znum import Znum, Promethee, MCDMUtils
 
 table = [weights, *alternatives, criteria_types]
 promethee = Promethee(table)

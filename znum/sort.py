@@ -1,119 +1,144 @@
+"""Fuzzy number comparison using the NxF (Necessity for Fuzzy) framework.
+
+Compares two Z-numbers by computing dominance degrees through normalized
+intermediate representations and possibility measures over three fuzzy
+linguistic categories: better (nbF), equal (neF), and worse (nwF).
+"""
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from znum.core import Znum
 
+# NxF linguistic categories and their trapezoidal membership boundaries.
+# Each tuple defines (left, inner-left, inner-right, right) of the trapezoid.
+_NXF_OPTIONS = dict(nbF="nbF", neF="neF", nwF="nwF")
+
+_NXF = {
+    _NXF_OPTIONS["nbF"]: (-1, -1, -0.3, -0.1),   # "better" region
+    _NXF_OPTIONS["neF"]: (-0.3, -0.1, 0.1, 0.3),  # "equal" region
+    _NXF_OPTIONS["nwF"]: (0.1, 0.3, 1, 1),         # "worse" region
+}
+
 
 class Sort:
-    """x -> anonymous"""
-
-    NXF_OPTIONS = dict(nbF="nbF", neF="neF", nwF="nwF")
-
-    NXF = {
-        NXF_OPTIONS["nbF"]: (-1, -1, -0.3, -0.1),
-        NXF_OPTIONS["neF"]: (-0.3, -0.1, 0.1, 0.3),
-        NXF_OPTIONS["nwF"]: (0.1, 0.3, 1, 1),
-    }
+    """Fuzzy dominance-based comparison between two Z-numbers."""
 
     @staticmethod
-    def solver_main(znum1: "Znum", znum2: "Znum"):
-        (normA1, normA2) = Sort.normalization(znum1.A, znum2.A)
+    def solver_main(znum1: Znum, znum2: Znum) -> tuple[float, float]:
+        """Compare znum1 against znum2 and return (d, do) dominance scores.
 
-        intermediateA = Sort.get_intermediate(normA1, normA2)
-        intermediateB = Sort.get_intermediate(znum1.B, znum2.B)
+        Returns:
+            A tuple (d, do) where do = 1 - d. Higher do means znum1 dominates znum2 more.
+        """
+        (norm_a1, norm_a2) = Sort._normalize(znum1.A, znum2.A)
 
-        intermediates = {"A": intermediateA, "B": intermediateB}
-        nxF_Qs_possibilities = {
-            Q: {
-                option: Sort.nxF_Q_possibility(intermediates[Q], option)
-                for option in Sort.NXF_OPTIONS
+        intermediate_a = Sort._get_intermediate(norm_a1, norm_a2)
+        intermediate_b = Sort._get_intermediate(znum1.B, znum2.B)
+
+        intermediates = {"A": intermediate_a, "B": intermediate_b}
+        nxf_possibilities = {
+            q: {
+                option: Sort._nxf_possibility(intermediates[q], option)
+                for option in _NXF_OPTIONS
             }
-            for Q in intermediates
+            for q in intermediates
         }
-        nxF_Qs = {
-            Q: {
-                option: Sort.nxF_Q(nxF_Qs_possibilities[Q], option)
-                for option in Sort.NXF_OPTIONS
+        nxf_values = {
+            q: {
+                option: Sort._nxf_value(nxf_possibilities[q], option)
+                for option in _NXF_OPTIONS
             }
-            for Q in intermediates
+            for q in intermediates
         }
 
-        d = Sort.final_sum(nxF_Qs)
+        d = Sort._final_score(nxf_values)
         do = 1 - d
 
         return d, do
 
     @staticmethod
-    def normalization(q1, q2):
+    def _normalize(
+        q1: list[float] | object,
+        q2: list[float] | object,
+    ) -> tuple[list[float], list[float]]:
+        """Min-max normalize both sequences together into [0, 1]."""
         qs = [*q1, *q2]
-        minQ, maxQ = min(qs), max(qs)
+        min_q, max_q = min(qs), max(qs)
 
-        # IMPORTANT: if minQ == maxQ, then all qs are the same, usual normalization will result in division by zero
-        # return constant 0
-        if minQ == maxQ:
+        if min_q == max_q:
             return [0] * len(q1), [0] * len(q2)
 
-        normalized = [(q - minQ) / (maxQ - minQ) for q in qs]
-        return normalized[: len(q1)], normalized[len(q1) :]
+        normalized = [(q - min_q) / (max_q - min_q) for q in qs]
+        return normalized[: len(q1)], normalized[len(q1):]
 
     @staticmethod
-    def get_intermediate(normQ1, normQ2):
+    def _get_intermediate(norm_q1: list[float], norm_q2: list[float]) -> list[float]:
+        """Compute element-wise difference between q1 and reversed q2."""
         return [
-            q1 - normQ2[len(normQ2) - index - 1] for (index, q1) in enumerate(normQ1)
+            q1 - norm_q2[len(norm_q2) - index - 1]
+            for (index, q1) in enumerate(norm_q1)
         ]
 
     @staticmethod
-    def nxF_Q_possibility(
-        intermediateA: tuple[float, float, float, float]
-        | list[float, float, float, float],
-        option,
-    ):
-        """
-        only for 4 corner znum
-        a1, a2, ... , b3, b4 may be not the part of znum.A?B
-        """
-
-        a1, a2, a3, a4 = intermediateA
+    def _nxf_possibility(
+        intermediate: list[float],
+        option: str,
+    ) -> float:
+        """Compute the possibility measure of intermediate falling in the given NxF category."""
+        a1, a2, a3, a4 = intermediate
         alpha_l, a1, a2, alpha_r = [a2 - a1, a2, a3, a4 - a3]
 
-        b1, b2, b3, b4 = Sort.NXF[option]
-        betta_l, b1, b2, betta_r = [b2 - b1, b2, b3, b4 - b3]
+        b1, b2, b3, b4 = _NXF[option]
+        beta_l, b1, b2, beta_r = [b2 - b1, b2, b3, b4 - b3]
 
-        nxF_Q_possibility = Sort.formula_nxF_Q_possibility(
-            alpha_l, a1, a2, alpha_r, betta_l, b1, b2, betta_r
+        return Sort._formula_nxf_possibility(
+            alpha_l, a1, a2, alpha_r, beta_l, b1, b2, beta_r
         )
 
-        return nxF_Q_possibility
-
     @staticmethod
-    def formula_nxF_Q_possibility(alpha_l, a1, a2, alpha_r, betta_l, b1, b2, betta_r):
-        if 0 < a1 - b2 < alpha_l + betta_r:
-            return 1 - (a1 - b2) / (alpha_l + betta_r)
+    def _formula_nxf_possibility(
+        alpha_l: float, a1: float, a2: float, alpha_r: float,
+        beta_l: float, b1: float, b2: float, beta_r: float,
+    ) -> float:
+        """Compute possibility of overlap between two trapezoidal shapes."""
+        if 0 < a1 - b2 < alpha_l + beta_r:
+            denominator = alpha_l + beta_r
+            if denominator == 0:
+                return 0.0
+            return 1 - (a1 - b2) / denominator
         elif max(a1, b1) <= min(a2, b2):
             return 1
-        elif 0 < b1 - a2 < alpha_r + betta_l:
-            return 1 - (b1 - a2) / (alpha_r + betta_l)
+        elif 0 < b1 - a2 < alpha_r + beta_l:
+            denominator = alpha_r + beta_l
+            if denominator == 0:
+                return 0.0
+            return 1 - (b1 - a2) / denominator
         else:
             return 0
 
     @staticmethod
-    def nxF_Q(nxF_Q_possibilities: dict, option):
-        sum_of_nxF_Q_possibilities_except_option = sum(
-            (
-                nxF_Q_possibilities[_option]
-                for _option in nxF_Q_possibilities
-                if _option != option
-            )
+    def _nxf_value(nxf_possibilities: dict[str, float], option: str) -> float:
+        """Normalize a possibility value against the sum of all possibilities."""
+        others_sum = sum(
+            nxf_possibilities[opt]
+            for opt in nxf_possibilities
+            if opt != option
         )
-        nxF_Q_possibility = nxF_Q_possibilities[option]
-        return nxF_Q_possibility / (
-            nxF_Q_possibility + sum_of_nxF_Q_possibilities_except_option
-        )
+        possibility = nxf_possibilities[option]
+        denominator = possibility + others_sum
+        if denominator == 0:
+            return 0.0
+        return possibility / denominator
 
     @staticmethod
-    def final_sum(nxF_Qs: dict[dict]):
-        nxF_Qs_sum = tuple(
-            (a + b) for a, b in zip(*(Q.values() for Q in nxF_Qs.values()))
+    def _final_score(nxf_values: dict[str, dict[str, float]]) -> float:
+        """Combine A and B NxF values into a single dominance score."""
+        nxf_sum = tuple(
+            (a + b) for a, b in zip(*(q.values() for q in nxf_values.values()))
         )
-        Nb, Ne = nxF_Qs_sum[:2]
-        return 0 if (2 - Ne) / 2 >= Nb else (2 * Nb + Ne - 2) / Nb
+        nb, ne = nxf_sum[:2]
+        if nb == 0 or (2 - ne) / 2 >= nb:
+            return 0.0
+        return (2 * nb + ne - 2) / nb

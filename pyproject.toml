@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "znum"
-version = "0.6.0"
-description = "Z-number data type for fuzzy arithmetic and multi-criteria decision making (TOPSIS, VIKOR, PROMETHEE)"
+version = "1.0.0"
+description = "Z-number data type for fuzzy arithmetic and multi-criteria decision making (TOPSIS, PROMETHEE)"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -19,7 +19,6 @@ keywords = [
     "mcdm",
     "multi-criteria-decision-making",
     "topsis",
-    "vikor",
     "promethee",
     "optimization",
 ]

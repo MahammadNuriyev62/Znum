@@ -1,33 +1,63 @@
+from __future__ import annotations
+
+import warnings
+
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
 from .math_ops import Math
 from .sort import Sort
-from .topsis import Topsis
-from .promethee import Promethee
-from .utils import Beast
-from .vikor import Vikor
 from .valid import Valid
-from .ztype import Type
-from .dist import Dist
+
+_B_MIN_THRESHOLD = 1e-3
+_B_EPSILON = 1e-6
 
 
 class Znum:
-    Vikor = Vikor
-    Topsis = Topsis
-    Sort = Sort
-    Promethee = Promethee
-    Beast = Beast
-    Math = Math
-    Dist = Dist
+    """A Z-number: a fuzzy number with restriction (A) and reliability (B) components.
 
-    def __init__(self, A=None, B=None, left=4, right=4, C=None, A_int=None, B_int=None):
+    A Z-number Z = (A, B) where:
+    - A is a fuzzy restriction on the values of a variable
+    - B is a measure of reliability (confidence) of A
+
+    Both A and B are represented as trapezoidal fuzzy numbers.
+
+    Args:
+        A: Fuzzy restriction values (trapezoidal), e.g. [1, 2, 3, 4].
+        B: Reliability values (trapezoidal), e.g. [0.1, 0.2, 0.3, 0.4].
+        left: Number of intermediate points on the left slope.
+        right: Number of intermediate points on the right slope.
+        C: Membership function values. Defaults to [0, 1, 1, 0] for trapezoids.
+        A_int: Pre-computed intermediate representation of A.
+        B_int: Pre-computed intermediate representation of B.
+    """
+
+    def __init__(
+        self,
+        A: ArrayLike | None = None,
+        B: ArrayLike | None = None,
+        left: int = 4,
+        right: int = 4,
+        C: ArrayLike | None = None,
+        A_int: dict | None = None,
+        B_int: dict | None = None,
+    ) -> None:
         self._A = np.array(A if A is not None else Znum.get_default_A(), dtype=float)
         self._B = np.array(B if B is not None else Znum.get_default_B(), dtype=float)
-        if self._B[-1] < 0.001:
+
+        # Prevent degenerate LP solutions when B values are near-zero
+        if self._B[-1] < _B_MIN_THRESHOLD:
+            warnings.warn(
+                f"B[-1] < {_B_MIN_THRESHOLD}: small epsilon added to B values "
+                "to avoid degenerate linear programming solutions.",
+                stacklevel=2,
+            )
             for i in range(len(self._B)):
-                self._B[i] += 1e-6 * (i + 1)
+                self._B[i] += _B_EPSILON * (i + 1)
+
         self._C = np.array(C if C is not None else Znum.get_default_C(), dtype=float)
 
-        # IMPORTANT: if all elements of A are equal, membership for all values is 1, number is "exact"
+        # If all elements of A are equal, membership for all values is 1 (exact number)
         if np.all(self._A == self._A[0]):
             self._C = np.ones(len(self._A))
 
@@ -35,120 +65,137 @@ class Znum:
         self.left, self.right = left, right
         self.math = Math(self)
         self.valid = Valid(self)
-        self.type = Type(self)
         self.A_int = A_int or self.math.get_intermediate(self._A)
         self.B_int = B_int or self.math.get_intermediate(self._B)
 
     @property
-    def A(self):
+    def A(self) -> NDArray[np.float64]:
+        """The fuzzy restriction values."""
         return self._A
 
     @A.setter
-    def A(self, A):
+    def A(self, A: ArrayLike) -> None:
         self._A = np.array(A, dtype=float)
         self.A_int = self.math.get_intermediate(self._A)
 
     @property
-    def B(self):
+    def B(self) -> NDArray[np.float64]:
+        """The reliability/confidence values."""
         return self._B
 
     @B.setter
-    def B(self, B):
+    def B(self, B: ArrayLike) -> None:
         self._B = np.array(B, dtype=float)
         self.B_int = self.math.get_intermediate(self._B)
 
     @property
-    def C(self):
+    def C(self) -> NDArray[np.float64]:
+        """The membership function values."""
         return self._C
 
     @C.setter
-    def C(self, C):
+    def C(self, C: ArrayLike) -> None:
         self._C = np.array(C, dtype=float)
 
     @property
-    def dimension(self):
+    def dimension(self) -> int:
+        """Number of corner points in the fuzzy number."""
         return len(self._A)
 
+    @property
+    def is_trapezoid(self) -> bool:
+        """Whether this Z-number has a trapezoidal shape (4 corner points)."""
+        return len(self._A) == 4
+
+    @property
+    def is_triangle(self) -> bool:
+        """Whether this Z-number has a triangular shape (e.g. [1, 2, 2, 3])."""
+        return len(self._A) >= 3 and self._A[1] == self._A[-2]
+
+    @property
+    def is_even(self) -> bool:
+        """Whether this Z-number has an even number of corner points."""
+        return len(self._A) % 2 == 0
+
     @staticmethod
-    def get_default_A():
+    def get_default_A() -> NDArray[np.float64]:
         return np.array([1, 2, 3, 4], dtype=float)
 
     @staticmethod
-    def get_default_B():
+    def get_default_B() -> NDArray[np.float64]:
         return np.array([0.1, 0.2, 0.3, 0.4], dtype=float)
 
     @staticmethod
-    def get_default_C():
+    def get_default_C() -> NDArray[np.float64]:
         return np.array([0, 1, 1, 0], dtype=float)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Znum(A=" + str(self.A.tolist()) + ", B=" + str(self.B.tolist()) + ")"
 
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __add__(self, other):
+    def __add__(self, other: Znum | int | float) -> Znum:
         if isinstance(other, (int, float)) and other == 0:
             return self
         return self.math.z_solver_main(self, other, Math.Operations.ADDITION)
 
-    def __mul__(self, other):
-        """
-        :type other: Union[Znum, int, float]
-        """
+    def __radd__(self, other: Znum | int | float) -> Znum:
+        if isinstance(other, (int, float)) and other == 0:
+            return self
+        return self + other
+
+    def __sub__(self, other: Znum) -> Znum:
+        return self.math.z_solver_main(self, other, Math.Operations.SUBTRACTION)
+
+    def __mul__(self, other: Znum | int | float) -> Znum:
         if isinstance(other, Znum):
             return self.math.z_solver_main(self, other, Math.Operations.MULTIPLICATION)
         if isinstance(other, (float, int)):
             return Znum(A=self.A * other, B=self.B.copy())
-        else:
-            raise Exception(f"Znum cannot multiplied by a data type {type(other)}")
+        raise TypeError(f"Znum cannot be multiplied by type {type(other).__name__}")
 
-    def __sub__(self, other):
-        return self.math.z_solver_main(self, other, Math.Operations.SUBTRACTION)
-
-    def __truediv__(self, other):
+    def __truediv__(self, other: Znum) -> Znum:
         return self.math.z_solver_main(self, other, Math.Operations.DIVISION)
 
-    def __pow__(self, power, modulo=None):
+    def __pow__(self, power: int | float, modulo: int | None = None) -> Znum:
         return Znum(A=self.A**power, B=self.B.copy())
 
-    def __gt__(self, o: "Znum"):
-        d, do = Znum.Sort.solver_main(self, o)
-        _d, _do = Znum.Sort.solver_main(o, self)
+    def __gt__(self, other: Znum) -> bool:
+        d, do = Sort.solver_main(self, other)
+        _d, _do = Sort.solver_main(other, self)
         return do > _do
 
-    def __lt__(self, o: "Znum"):
-        d, do = Znum.Sort.solver_main(self, o)
-        _d, _do = Znum.Sort.solver_main(o, self)
+    def __lt__(self, other: Znum) -> bool:
+        d, do = Sort.solver_main(self, other)
+        _d, _do = Sort.solver_main(other, self)
         return do < _do
 
-    def __eq__(self, o):
-        if not isinstance(o, Znum):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Znum):
             return False
-        d, do = Znum.Sort.solver_main(self, o)
-        _d, _do = Znum.Sort.solver_main(o, self)
+        d, do = Sort.solver_main(self, other)
+        _d, _do = Sort.solver_main(other, self)
         return do == 1 and _do == 1
 
-    def __ge__(self, o: "Znum"):
-        d, do = Znum.Sort.solver_main(self, o)
-        _d, _do = Znum.Sort.solver_main(o, self)
+    def __ge__(self, other: Znum) -> bool:
+        d, do = Sort.solver_main(self, other)
+        _d, _do = Sort.solver_main(other, self)
         return do >= _do
 
-    def __le__(self, o: "Znum"):
-        d, do = Znum.Sort.solver_main(self, o)
-        _d, _do = Znum.Sort.solver_main(o, self)
+    def __le__(self, other: Znum) -> bool:
+        d, do = Sort.solver_main(self, other)
+        _d, _do = Sort.solver_main(other, self)
         return do <= _do
 
-    def copy(self):
+    def copy(self) -> Znum:
+        """Return a deep copy of this Z-number."""
         return Znum(A=self.A.copy(), B=self.B.copy())
 
-    def to_json(self):
+    def to_json(self) -> dict[str, list[float]]:
+        """Serialize to a JSON-compatible dictionary."""
         return {"A": self.A.tolist(), "B": self.B.tolist()}
 
-    def to_array(self):
+    def to_array(self) -> NDArray[np.float64]:
+        """Concatenate A and B parts into a single array."""
         return np.concatenate([self._A, self._B])
-
-    def __radd__(self, other):
-        if isinstance(other, (int, float)) and other == 0:
-            return self
-        return self + other

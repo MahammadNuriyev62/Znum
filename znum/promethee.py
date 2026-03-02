@@ -1,114 +1,124 @@
-from .utils import Beast
-from .sort import Sort
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+from .sort import Sort
+from .utils import MCDMUtils
 
 if TYPE_CHECKING:
     from znum.core import Znum
 
 
 class Promethee:
-    def __init__(self, table: list[list], shouldNormalizeWeight=False):
+    """PROMETHEE (Preference Ranking Organization METHod for Enrichment Evaluations).
+
+    Ranks alternatives using pairwise preference comparisons and net flow scores.
+    Higher net flow means a better alternative.
+
+    Args:
+        table: Decision matrix where table[0] is weights, table[1:-1] are
+            alternatives, and table[-1] is criteria types.
+        normalize_weights: Whether to normalize the weight vector.
+    """
+
+    def __init__(self, table: list[list], normalize_weights: bool = False) -> None:
         self.weights: list[Znum] = table[0]
         self.table_main_part: list[list[Znum]] = table[1:-1]
         self.criteria_types: list[str] = table[-1]
-        self.sorted_table = None
+        self._result: tuple | None = None
 
-        if shouldNormalizeWeight:
-            Beast.normalize_weight(self.weights)
+        if normalize_weights:
+            MCDMUtils.normalize_weight(self.weights)
 
-    @staticmethod
-    def calculate_preference_table(table_main_part: list[list["Znum"]]):
-        preference_table = []
-        for indexAlternative, alternative in enumerate(table_main_part):
-            alternativeRow = []
-            for indexOtherAlternative, otherAlternative in enumerate(table_main_part):
-                if indexAlternative != indexOtherAlternative:
-                    otherAlternativeRow = []
-                    for criteria, otherCriteria in zip(alternative, otherAlternative):
-                        (d1, do1) = Sort.solver_main(criteria, otherCriteria)
-                        (d2, do2) = Sort.solver_main(otherCriteria, criteria)
-                        d = do1 - do2
-                        d = d if d > 0 else 0
-                        otherAlternativeRow.append(d)
-                    alternativeRow.append(otherAlternativeRow)
-                else:
-                    alternativeRow.append([])
-
-            preference_table.append(alternativeRow)
-        return preference_table
-
-    @staticmethod
-    def weightage(preference_table, weights):
-        for preferenceByCategoriesByAlternatives in preference_table:
-            for preferenceByCategories in preferenceByCategoriesByAlternatives:
-                for index, (preferenceByCategory, weight) in enumerate(
-                    zip(preferenceByCategories, weights)
-                ):
-                    preferenceByCategories[index] = (
-                        weight * preferenceByCategory
-                    )  # order is Znum() * Number()
-
-    @staticmethod
-    def sum_preferences_of_same_category_pair(preference_table):
-        for preferenceByCategoriesByAlternatives in preference_table:
-            for index, preferenceByCategories in enumerate(
-                preferenceByCategoriesByAlternatives
-            ):
-                preferenceByCategoriesByAlternatives[index] = sum(
-                    preferenceByCategories
-                )
-
-    @staticmethod
-    def vertical_alternative_sum(preference_table):
-        return [sum(column) for column in zip(*preference_table)]
-
-    @staticmethod
-    def horizontal_alternative_sum(preference_table):
-        return [sum(row) for row in preference_table]
-
-    @staticmethod
-    def numerate(single_column_table: list["Znum"]):
-        return list(enumerate(single_column_table, 0))
-
-    @staticmethod
-    def sort_numerated_single_column_table(single_column_table: list["Znum"]):
-        sorted_table = tuple(
-            sorted(single_column_table, reverse=True, key=lambda x: x[1])
-        )
-        return sorted_table
-
-    def solve(self):
+    def solve(self) -> tuple:
+        """Run PROMETHEE and return a sorted table of (index, net_flow) tuples."""
         table_main_part_transpose = tuple(zip(*self.table_main_part))
         for column_number, column in enumerate(table_main_part_transpose):
-            Beast.normalize(column, self.criteria_types[column_number])
+            MCDMUtils.normalize(column, self.criteria_types[column_number])
 
-        preference_table = Promethee.calculate_preference_table(self.table_main_part)
+        preference_table = Promethee._calculate_preference_table(self.table_main_part)
 
-        Promethee.weightage(preference_table, self.weights)
-        Promethee.sum_preferences_of_same_category_pair(preference_table)
+        Promethee._apply_weights(preference_table, self.weights)
+        Promethee._sum_pairwise_preferences(preference_table)
 
-        vertical_sum = Promethee.vertical_alternative_sum(preference_table)
-        horizontal_sum = Promethee.horizontal_alternative_sum(preference_table)
+        vertical_sum = Promethee._column_sums(preference_table)
+        horizontal_sum = Promethee._row_sums(preference_table)
 
-        # horizontal_sum - vertical_sum
-        table_to_sort = Beast.subtract_matrix(horizontal_sum, vertical_sum)
+        net_flows = MCDMUtils.subtract_matrix(horizontal_sum, vertical_sum)
 
-        numerated_table_to_sort = Promethee.numerate(table_to_sort)
-        sorted_table = Promethee.sort_numerated_single_column_table(
-            numerated_table_to_sort
-        )
+        numerated = list(enumerate(net_flows, 0))
+        sorted_table = tuple(sorted(numerated, reverse=True, key=lambda x: x[1]))
 
-        self.sorted_table = sorted_table
+        self._result = sorted_table
         return sorted_table
 
     @property
-    def ordered_indices(self):
-        return [r[0] for r in self.sorted_table]
+    def result(self) -> tuple:
+        """The sorted (index, net_flow) tuples (must call solve() first)."""
+        if self._result is None:
+            raise ValueError("Must call solve() before accessing result")
+        return self._result
 
     @property
-    def index_of_best_alternative(self):
+    def ordered_indices(self) -> list[int]:
+        """Alternative indices sorted by net flow (best first)."""
+        if self._result is None:
+            raise ValueError("Must call solve() before accessing ordered_indices")
+        return [r[0] for r in self._result]
+
+    @property
+    def index_of_best_alternative(self) -> int:
+        """Index of the best alternative."""
         return self.ordered_indices[0]
 
     @property
-    def index_of_worst_alternative(self):
+    def index_of_worst_alternative(self) -> int:
+        """Index of the worst alternative."""
         return self.ordered_indices[-1]
+
+    @staticmethod
+    def _calculate_preference_table(table_main_part: list[list[Znum]]) -> list[list]:
+        """Build the pairwise preference matrix using fuzzy dominance comparisons."""
+        preference_table = []
+        for i_alt, alternative in enumerate(table_main_part):
+            alt_row = []
+            for j_alt, other_alt in enumerate(table_main_part):
+                if i_alt != j_alt:
+                    pairwise_prefs = []
+                    for criterion, other_criterion in zip(alternative, other_alt):
+                        (_, do1) = Sort.solver_main(criterion, other_criterion)
+                        (_, do2) = Sort.solver_main(other_criterion, criterion)
+                        d = max(do1 - do2, 0)
+                        pairwise_prefs.append(d)
+                    alt_row.append(pairwise_prefs)
+                else:
+                    alt_row.append([])
+            preference_table.append(alt_row)
+        return preference_table
+
+    @staticmethod
+    def _apply_weights(preference_table: list[list], weights: list[Znum]) -> None:
+        """Multiply each preference value by its criterion weight."""
+        for prefs_by_alt in preference_table:
+            for prefs_by_criteria in prefs_by_alt:
+                for index, (pref, weight) in enumerate(
+                    zip(prefs_by_criteria, weights)
+                ):
+                    prefs_by_criteria[index] = weight * pref  # Znum * Number
+
+    @staticmethod
+    def _sum_pairwise_preferences(preference_table: list[list]) -> None:
+        """Collapse per-criterion preferences into a single value per pair."""
+        for prefs_by_alt in preference_table:
+            for index, prefs_by_criteria in enumerate(prefs_by_alt):
+                prefs_by_alt[index] = sum(prefs_by_criteria)
+
+    @staticmethod
+    def _column_sums(preference_table: list[list]) -> list:
+        """Sum columns (entering flow)."""
+        return [sum(column) for column in zip(*preference_table)]
+
+    @staticmethod
+    def _row_sums(preference_table: list[list]) -> list:
+        """Sum rows (leaving flow)."""
+        return [sum(row) for row in preference_table]
