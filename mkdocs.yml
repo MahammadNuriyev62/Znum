@@ -1,0 +1,65 @@
+site_name: Znum
+site_description: Z-number arithmetic and multi-criteria decision making for Python
+site_url: https://mahammadnuriyev62.github.io/Znum/
+repo_url: https://github.com/MahammadNuriyev62/Znum
+repo_name: MahammadNuriyev62/Znum
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.code.annotate
+    - navigation.instant
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide:
+      - Creating Z-numbers: guide/creating.md
+      - Arithmetic: guide/arithmetic.md
+      - Comparison & Sorting: guide/comparison.md
+  - MCDM Methods:
+      - TOPSIS: mcdm/topsis.md
+      - PROMETHEE: mcdm/promethee.md
+  - API Reference: api.md
