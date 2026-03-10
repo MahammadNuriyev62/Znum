@@ -117,6 +117,26 @@ class Znum:
         """Whether this Z-number has an even number of corner points."""
         return len(self._A) % 2 == 0
 
+    @classmethod
+    def crisp(cls, value: int | float) -> Znum:
+        """Create a crisp (exact) Z-number with full reliability.
+
+        A crisp Z-number has no fuzziness and 100% reliability:
+        A = (value, value, value, value), B = (1, 1, 1, 1).
+
+        Args:
+            value: The exact numeric value.
+
+        Returns:
+            A Z-number representing a crisp value with full reliability.
+
+        Example:
+            >>> z = Znum.crisp(5)
+            >>> print(z)
+            Znum(A=[5.0, 5.0, 5.0, 5.0], B=[1.0, 1.0, 1.0, 1.0])
+        """
+        return cls(A=[value] * 4, B=[1, 1, 1, 1])
+
     @staticmethod
     def get_default_A() -> NDArray[np.float64]:
         return np.array([1, 2, 3, 4], dtype=float)
