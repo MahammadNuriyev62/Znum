@@ -16,7 +16,6 @@ Znum(
     B: list | None = None,       # Reliability [b1, b2, b3, b4]
     left: int = 4,               # Left slope intermediate points
     right: int = 4,              # Right slope intermediate points
-    C: list | None = None,       # Membership function values
     A_int: dict | None = None,   # Pre-computed A intermediate
     B_int: dict | None = None,   # Pre-computed B intermediate
 )
@@ -34,7 +33,8 @@ Znum(
 |----------|------|-------------|
 | `A` | `ndarray` | Fuzzy restriction values (read/write) |
 | `B` | `ndarray` | Reliability values (read/write) |
-| `C` | `ndarray` | Membership function values (read/write) |
+| `mu_A` | `ndarray` | Membership function of A (read-only) |
+| `mu_B` | `ndarray` | Membership function of B (read-only) |
 | `dimension` | `int` | Number of corner points |
 | `is_trapezoid` | `bool` | True if 4 corner points |
 | `is_triangle` | `bool` | True if `A[1] == A[-2]` |
@@ -71,7 +71,6 @@ Znum(
 |--------|---------|-------------|
 | `get_default_A()` | `ndarray` | `[1, 2, 3, 4]` |
 | `get_default_B()` | `ndarray` | `[0.1, 0.2, 0.3, 0.4]` |
-| `get_default_C()` | `ndarray` | `[0, 1, 1, 0]` |
 
 ---
 
