@@ -30,6 +30,8 @@ theme:
     - navigation.top
     - search.highlight
     - toc.follow
+  logo: assets/logo-icon.svg
+  favicon: assets/logo.svg
   icon:
     repo: fontawesome/brands/github
 
