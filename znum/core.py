@@ -20,17 +20,19 @@ class Znum:
     - A is a fuzzy restriction on the values of a variable
     - B is a measure of reliability (confidence) of A
 
-    Both A and B are represented as trapezoidal fuzzy numbers.
+    Both A and B are represented as trapezoidal fuzzy numbers, each with
+    its own membership function (mu_A and mu_B).
 
     Args:
         A: Fuzzy restriction values (trapezoidal), e.g. [1, 2, 3, 4].
         B: Reliability values (trapezoidal), e.g. [0.1, 0.2, 0.3, 0.4].
         left: Number of intermediate points on the left slope.
         right: Number of intermediate points on the right slope.
-        C: Membership function values. Defaults to [0, 1, 1, 0] for trapezoids.
         A_int: Pre-computed intermediate representation of A.
         B_int: Pre-computed intermediate representation of B.
     """
+
+    _DEFAULT_MU = np.array([0, 1, 1, 0], dtype=float)
 
     def __init__(
         self,
@@ -38,7 +40,6 @@ class Znum:
         B: ArrayLike | None = None,
         left: int = 4,
         right: int = 4,
-        C: ArrayLike | None = None,
         A_int: dict | None = None,
         B_int: dict | None = None,
     ) -> None:
@@ -55,18 +56,17 @@ class Znum:
             for i in range(len(self._B)):
                 self._B[i] += _B_EPSILON * (i + 1)
 
-        self._C = np.array(C if C is not None else Znum.get_default_C(), dtype=float)
-
-        # If all elements of A are equal, membership for all values is 1 (exact number)
-        if np.all(self._A == self._A[0]):
-            self._C = np.ones(len(self._A))
+        # Each component gets its own membership function:
+        # [1,1,1,1] for crisp (all values equal), [0,1,1,0] for standard trapezoid
+        self._mu_A = Znum._compute_mu(self._A)
+        self._mu_B = Znum._compute_mu(self._B)
 
         self._dimension = len(self._A)
         self.left, self.right = left, right
         self.math = Math(self)
         self.valid = Valid(self)
-        self.A_int = A_int or self.math.get_intermediate(self._A)
-        self.B_int = B_int or self.math.get_intermediate(self._B)
+        self.A_int = A_int or self.math.get_intermediate(self._A, self._mu_A)
+        self.B_int = B_int or self.math.get_intermediate(self._B, self._mu_B)
 
     @property
     def A(self) -> NDArray[np.float64]:
@@ -76,7 +76,8 @@ class Znum:
     @A.setter
     def A(self, A: ArrayLike) -> None:
         self._A = np.array(A, dtype=float)
-        self.A_int = self.math.get_intermediate(self._A)
+        self._mu_A = Znum._compute_mu(self._A)
+        self.A_int = self.math.get_intermediate(self._A, self._mu_A)
 
     @property
     def B(self) -> NDArray[np.float64]:
@@ -86,16 +87,18 @@ class Znum:
     @B.setter
     def B(self, B: ArrayLike) -> None:
         self._B = np.array(B, dtype=float)
-        self.B_int = self.math.get_intermediate(self._B)
+        self._mu_B = Znum._compute_mu(self._B)
+        self.B_int = self.math.get_intermediate(self._B, self._mu_B)
 
     @property
-    def C(self) -> NDArray[np.float64]:
-        """The membership function values."""
-        return self._C
+    def mu_A(self) -> NDArray[np.float64]:
+        """Membership function of the fuzzy restriction (A)."""
+        return self._mu_A
 
-    @C.setter
-    def C(self, C: ArrayLike) -> None:
-        self._C = np.array(C, dtype=float)
+    @property
+    def mu_B(self) -> NDArray[np.float64]:
+        """Membership function of the reliability (B)."""
+        return self._mu_B
 
     @property
     def dimension(self) -> int:
@@ -146,8 +149,18 @@ class Znum:
         return np.array([0.1, 0.2, 0.3, 0.4], dtype=float)
 
     @staticmethod
-    def get_default_C() -> NDArray[np.float64]:
-        return np.array([0, 1, 1, 0], dtype=float)
+    def _compute_mu(Q: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Compute the membership function for a trapezoidal fuzzy number.
+
+        Degenerate slopes (where endpoints are equal) get membership 1
+        instead of 0, since all points collapse onto the flat top.
+        """
+        mu = Znum._DEFAULT_MU.copy()
+        if Q[0] == Q[1]:
+            mu[0] = 1
+        if Q[2] == Q[3]:
+            mu[3] = 1
+        return mu
 
     def __str__(self) -> str:
         return "Znum(A=" + str(self.A.tolist()) + ", B=" + str(self.B.tolist()) + ")"

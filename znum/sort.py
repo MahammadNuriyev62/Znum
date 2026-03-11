@@ -34,8 +34,8 @@ class Sort:
         """
         (norm_a1, norm_a2) = Sort._normalize(znum1.A, znum2.A)
 
-        intermediate_a = Sort._get_intermediate(norm_a1, norm_a2)
-        intermediate_b = Sort._get_intermediate(znum1.B, znum2.B)
+        intermediate_a = [a - b for a, b in zip(norm_a1, reversed(norm_a2))]
+        intermediate_b = [a - b for a, b in zip(znum1.B, reversed(znum2.B))]
 
         intermediates = {"A": intermediate_a, "B": intermediate_b}
         nxf_possibilities = {
@@ -72,14 +72,6 @@ class Sort:
 
         normalized = [(q - min_q) / (max_q - min_q) for q in qs]
         return normalized[: len(q1)], normalized[len(q1):]
-
-    @staticmethod
-    def _get_intermediate(norm_q1: list[float], norm_q2: list[float]) -> list[float]:
-        """Compute element-wise difference between q1 and reversed q2."""
-        return [
-            q1 - norm_q2[len(norm_q2) - index - 1]
-            for (index, q1) in enumerate(norm_q1)
-        ]
 
     @staticmethod
     def _nxf_possibility(

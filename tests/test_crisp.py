@@ -66,17 +66,20 @@ class TestCrispProperties:
         assert z.is_even is True
 
     def test_membership_all_ones(self):
-        """Crisp values should have C = [1, 1, 1, 1] (all-equal A triggers special case)."""
+        """Crisp values should have mu_A = mu_B = [1, 1, 1, 1]."""
         z = Znum.crisp(5)
-        assert_array_equal(z.C, [1.0, 1.0, 1.0, 1.0])
+        assert_array_equal(z.mu_A, [1.0, 1.0, 1.0, 1.0])
+        assert_array_equal(z.mu_B, [1.0, 1.0, 1.0, 1.0])
 
     def test_membership_all_ones_for_zero(self):
         z = Znum.crisp(0)
-        assert_array_equal(z.C, [1.0, 1.0, 1.0, 1.0])
+        assert_array_equal(z.mu_A, [1.0, 1.0, 1.0, 1.0])
+        assert_array_equal(z.mu_B, [1.0, 1.0, 1.0, 1.0])
 
     def test_membership_all_ones_for_negative(self):
         z = Znum.crisp(-7)
-        assert_array_equal(z.C, [1.0, 1.0, 1.0, 1.0])
+        assert_array_equal(z.mu_A, [1.0, 1.0, 1.0, 1.0])
+        assert_array_equal(z.mu_B, [1.0, 1.0, 1.0, 1.0])
 
     def test_is_instance_of_znum(self):
         z = Znum.crisp(5)

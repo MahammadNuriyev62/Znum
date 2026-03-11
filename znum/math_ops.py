@@ -50,39 +50,16 @@ class Math:
         arr = [i * (1 / (half - 1)) for i in range(half)]
         return (arr if size % 2 == 0 else arr[:-1]) + list(reversed(arr))
 
-    def get_membership(self, Q: np.ndarray, n: float) -> float:
-        """Get the membership value at point n by linear interpolation on Q."""
-        return self._interpolate(n, Q, self.root.C)
-
-    def _interpolate(self, x: float, xs: np.ndarray, ys: np.ndarray) -> float:
-        """Piecewise linear interpolation: find y for a given x."""
-        segments = [
-            [x1, x2, y1, y2]
-            for x1, x2, y1, y2 in zip(xs[1:], xs[:-1], ys[1:], ys[:-1])
-        ]
-        for x1, x2, y1, y2 in segments:
-            if x1 <= x <= x2 or x1 >= x >= x2:
-                if y1 == y2:
-                    return y1
-                if x1 == x2:
-                    return max(y1, y2)
-                k = (y2 - y1) / (x2 - x1)
-                b = y1 - k * x1
-                return k * x + b
-        return 0
-
-    def get_intermediate(self, Q: np.ndarray) -> dict[str, np.ndarray]:
+    def get_intermediate(self, Q: np.ndarray, mu: np.ndarray) -> dict[str, np.ndarray]:
         """Compute intermediate value/membership representation for LP solving."""
-        left_part = (Q[1] - Q[0]) / self.root.left
-        right_part = (Q[3] - Q[2]) / self.root.right
-
-        Q_int_value = np.concatenate(
-            (
-                [round(Q[0] + i * left_part, 13) for i in range(self.root.left + 1)],
-                [round(Q[2] + i * right_part, 13) for i in range(self.root.right + 1)],
-            )
-        )
-        Q_int_memb = np.array([self.get_membership(Q, i) for i in Q_int_value])
+        Q_int_value = np.concatenate([
+            np.linspace(Q[0], Q[1], self.root.left + 1),
+            np.linspace(Q[2], Q[3], self.root.right + 1),
+        ])
+        Q_int_memb = np.concatenate([
+            np.linspace(mu[0], mu[1], self.root.left + 1),
+            np.linspace(mu[2], mu[3], self.root.right + 1),
+        ])
         return {"value": Q_int_value, "memb": Q_int_memb}
 
     def get_matrix(self) -> np.ndarray:
