@@ -1,15 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <rect width="128" height="128" rx="28" fill="#0d1117"/>
   <!-- Shapes -->
   <polygon points="8,106 26,22 58,22 64,50 52,106" fill="#42A5F5"/>
   <polygon points="64,50 70,22 102,22 120,106 76,106" fill="#66BB6A"/>
   <polygon points="64,50 52,106 76,106" fill="#EF5350"/>
   <!-- Axes on top of shapes -->
-  <line x1="8" y1="106" x2="120" y2="106" stroke="#e6edf3" stroke-width="2" stroke-linecap="round"/>
-  <line x1="16" y1="106" x2="16" y2="22" stroke="#e6edf3" stroke-width="2" stroke-linecap="round"/>
+  <line x1="8" y1="106" x2="120" y2="106" stroke="#24292f" stroke-width="2" stroke-linecap="round"/>
+  <line x1="16" y1="106" x2="16" y2="22" stroke="#24292f" stroke-width="2" stroke-linecap="round"/>
   <!-- Dashed projection lines from point to axes -->
-  <line x1="102" y1="22" x2="16" y2="22" stroke="#e6edf3" stroke-width="1.8" stroke-dasharray="4,3" opacity="0.7"/>
-  <line x1="102" y1="22" x2="102" y2="106" stroke="#e6edf3" stroke-width="1.8" stroke-dasharray="4,3" opacity="0.7"/>
+  <line x1="102" y1="22" x2="16" y2="22" stroke="#24292f" stroke-width="1.8" stroke-dasharray="4,3" opacity="0.7"/>
+  <line x1="102" y1="22" x2="102" y2="106" stroke="#24292f" stroke-width="1.8" stroke-dasharray="4,3" opacity="0.7"/>
   <!-- Point on green trapezoid top-right corner -->
-  <circle cx="102" cy="22" r="3" fill="#e6edf3"/>
+  <circle cx="102" cy="22" r="3" fill="#24292f"/>
 </svg>
