@@ -19,6 +19,8 @@
 
 ## Performance
 
+- **Replaced scipy with highspy** — Calls the HiGHS LP solver directly instead of going through scipy's Python wrapper. Same solver, same results, ~3x faster arithmetic operations. Dependency shrinks from 46MB (scipy) to 2.5MB (highspy).
+- **LP model reuse** — Builds the HiGHS model once per `get_matrix` call and re-solves by changing only the RHS, avoiding redundant model construction.
 - **Constant Z-number LP shortcut** — Ideal Z-numbers (used in Hellinger distance) now solve 1 LP instead of 10, reducing TOPSIS Hellinger runtime by ~27%.
 - **Promethee symmetry exploitation** — Preference table computation now uses upper-triangle iteration, cutting Sort comparisons in half (~22% faster).
 

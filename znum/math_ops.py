@@ -1,17 +1,15 @@
-"""Fuzzy arithmetic operations for Z-numbers using linear programming."""
+"""Fuzzy arithmetic operations for Z-numbers."""
 from __future__ import annotations
 
 import math
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy import array
-from scipy import optimize
+from highspy import Highs
 
 if TYPE_CHECKING:
     from znum.core import Znum
 
-_LP_METHOD = "highs-ds"
 _PRECISION = 6
 _PENALTY_COEFFICIENT = 10_000
 
@@ -19,7 +17,7 @@ _PENALTY_COEFFICIENT = 10_000
 class Math:
     """Core arithmetic engine for Z-number operations.
 
-    Uses linear programming (scipy.optimize.linprog) to compute fuzzy
+    Uses linear programming (HiGHS solver) to compute fuzzy
     arithmetic results while preserving membership constraints.
     """
 
@@ -63,7 +61,11 @@ class Math:
         return {"value": Q_int_value, "memb": Q_int_memb}
 
     def get_matrix(self) -> np.ndarray:
-        """Build optimization matrix via linear programming for each B intermediate value."""
+        """Build optimization matrix via linear programming for each B intermediate value.
+
+        Builds the HiGHS model once, then re-solves for each B intermediate
+        value by changing only the first constraint's RHS (b_eq[0]).
+        """
         a_vals = np.asarray(self.root.A_int["value"])
         b_vals = np.asarray(self.root.B_int["value"])
         size = len(a_vals)
@@ -71,34 +73,46 @@ class Math:
 
         d = _PENALTY_COEFFICIENT
         i37 = self._weighted_centroid(self.root.A_int)
-        c = np.concatenate([np.zeros(size), (d, d)], axis=0)
-        bounds = np.full((size + 2, 2), (0, 1))
-        A_eq = array(
-            [
-                np.concatenate((self.root.A_int["memb"], (-d, d))),
-                np.concatenate(([1] * size, (0, 0))),
-                np.concatenate((a_vals, (0, 0))),
-            ]
+        n_vars = size + 2
+
+        # Build model once
+        h = Highs()
+        h.silent()
+        h.addVars(n_vars, np.zeros(n_vars), np.ones(n_vars))
+        h.changeColsCost(
+            2,
+            np.array([size, size + 1], dtype=np.int32),
+            np.array([d, d], dtype=np.float64),
         )
+
+        # Row 0: memb · x[:size] - d*x[size] + d*x[size+1] = b20
+        row0_idx = np.arange(n_vars, dtype=np.int32)
+        row0_val = np.concatenate([self.root.A_int["memb"], [-d, d]])
+        h.addRow(b_vals[0], b_vals[0], n_vars, row0_idx, row0_val)
+
+        # Row 1: sum(x[:size]) = 1
+        row1_idx = np.arange(size, dtype=np.int32)
+        h.addRow(1.0, 1.0, size, row1_idx, np.ones(size))
+
+        # Row 2: a_vals · x[:size] = i37
+        h.addRow(i37, i37, size, row1_idx, a_vals)
 
         # When all intermediate values are constant (e.g. ideal Z-numbers),
         # all LPs are identical — solve once and replicate.
         if np.all(a_vals == a_vals[0]) and np.all(b_vals == b_vals[0]):
-            col = optimize.linprog(
-                c, A_eq=A_eq, b_eq=array((b_vals[0], 1, i37)),
-                bounds=bounds, method=_LP_METHOD,
-            ).x[:-2]
+            h.run()
+            col = np.array(h.allVariableValues())[:size]
             return np.tile(col, (n_cols, 1)).T
 
-        return np.array(
-            [
-                optimize.linprog(
-                    c, A_eq=A_eq, b_eq=array((b20, 1, i37)),
-                    bounds=bounds, method=_LP_METHOD,
-                ).x[:-2]
-                for b20 in b_vals
-            ]
-        ).T
+        # Solve each column, reusing the model structure
+        results = []
+        for b20 in b_vals:
+            h.changeRowBounds(0, b20, b20)
+            h.clearSolver()
+            h.run()
+            results.append(np.array(h.allVariableValues())[:size])
+
+        return np.array(results).T
 
     @staticmethod
     def _weighted_centroid(Q_int: dict[str, np.ndarray]) -> float:

@@ -29,7 +29,7 @@ z6 = z1 / z2    # Division
 
 ### How it works
 
-Arithmetic between two Z-numbers uses **linear programming** (via `scipy.optimize.linprog`) to compute the resulting fuzzy number while preserving membership constraints. The algorithm:
+Arithmetic between two Z-numbers uses **linear programming** (via the [HiGHS](https://ergo-code.github.io/HiGHS/) solver) to compute the resulting fuzzy number while preserving membership constraints. The algorithm:
 
 1. Builds intermediate representations of both operands
 2. Constructs an optimization matrix for all pairs of intermediate values
