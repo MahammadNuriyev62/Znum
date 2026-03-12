@@ -1,11 +1,27 @@
-"""Fuzzy arithmetic operations for Z-numbers."""
+"""Fuzzy arithmetic operations for Z-numbers.
+
+The arithmetic pipeline has two independent phases:
+
+1. **A computation** (LP-free): Cross-product of A intermediates, apply the
+   arithmetic operation, merge duplicates, extract trapezoidal corners.
+
+2. **B computation**: Two modes:
+   - **LP mode** (default): Solve linear programs to build probability
+     distributions, then derive the result B via probability-possibility
+     transform.
+   - **Fast mode** (`fast_b=True`): Element-wise min(B1, B2) — the result
+     is only as reliable as the least reliable input. No LP needed.
+"""
 from __future__ import annotations
 
 import math
+import threading
 from typing import TYPE_CHECKING
 
 import numpy as np
 from highspy import Highs
+
+_state = threading.local()
 
 if TYPE_CHECKING:
     from znum.core import Znum
@@ -15,11 +31,7 @@ _PENALTY_COEFFICIENT = 10_000
 
 
 class Math:
-    """Core arithmetic engine for Z-number operations.
-
-    Uses linear programming (HiGHS solver) to compute fuzzy
-    arithmetic results while preserving membership constraints.
-    """
+    """Core arithmetic engine for Z-number operations."""
 
     class Operations:
         ADDITION = 1
@@ -41,6 +53,8 @@ class Math:
     def __init__(self, root: Znum) -> None:
         self.root = root
 
+    # ---- Intermediate representations (used by core.py and dist.py) ----
+
     @staticmethod
     def get_default_membership(size: int) -> list[float]:
         """Generate a symmetric triangular membership function of given size."""
@@ -49,7 +63,7 @@ class Math:
         return (arr if size % 2 == 0 else arr[:-1]) + list(reversed(arr))
 
     def get_intermediate(self, Q: np.ndarray, mu: np.ndarray) -> dict[str, np.ndarray]:
-        """Compute intermediate value/membership representation for LP solving."""
+        """Compute intermediate value/membership representation."""
         Q_int_value = np.concatenate([
             np.linspace(Q[0], Q[1], self.root.left + 1),
             np.linspace(Q[2], Q[3], self.root.right + 1),
@@ -59,6 +73,8 @@ class Math:
             np.linspace(mu[2], mu[3], self.root.right + 1),
         ])
         return {"value": Q_int_value, "memb": Q_int_memb}
+
+    # ---- LP matrix (used by B computation and dist.py) ----
 
     def get_matrix(self) -> np.ndarray:
         """Build optimization matrix via linear programming for each B intermediate value.
@@ -85,7 +101,7 @@ class Math:
             np.array([d, d], dtype=np.float64),
         )
 
-        # Row 0: memb · x[:size] - d*x[size] + d*x[size+1] = b20
+        # Row 0: memb . x[:size] - d*x[size] + d*x[size+1] = b20
         row0_idx = np.arange(n_vars, dtype=np.int32)
         row0_val = np.concatenate([self.root.A_int["memb"], [-d, d]])
         h.addRow(b_vals[0], b_vals[0], n_vars, row0_idx, row0_val)
@@ -94,11 +110,11 @@ class Math:
         row1_idx = np.arange(size, dtype=np.int32)
         h.addRow(1.0, 1.0, size, row1_idx, np.ones(size))
 
-        # Row 2: a_vals · x[:size] = i37
+        # Row 2: a_vals . x[:size] = i37
         h.addRow(i37, i37, size, row1_idx, a_vals)
 
         # When all intermediate values are constant (e.g. ideal Z-numbers),
-        # all LPs are identical — solve once and replicate.
+        # all LPs are identical -- solve once and replicate.
         if np.all(a_vals == a_vals[0]) and np.all(b_vals == b_vals[0]):
             h.run()
             col = np.array(h.allVariableValues())[:size]
@@ -119,86 +135,133 @@ class Math:
         """Compute the membership-weighted centroid of intermediate values."""
         return np.dot(Q_int["value"], Q_int["memb"]) / np.sum(Q_int["memb"])
 
+    # ---- A computation (no LP) ----
+
     @staticmethod
-    def get_Q_from_matrix(matrix: list[list[float]]) -> list[float]:
-        """Extract the 4-corner trapezoidal Q values from an optimization matrix."""
+    def _compute_a_pairs(z1: Znum, z2: Znum, operation: int) -> list[list[float]]:
+        """Cross-product of A intermediates: apply operation + fuzzy-min membership.
+
+        Returns list of [value, membership] rows. No LP involved.
+        """
+        op_fn = Math._operation_functions[operation]
+        pairs = []
+        for a1_val, a1_memb in zip(z1.A_int["value"], z1.A_int["memb"]):
+            for a2_val, a2_memb in zip(z2.A_int["value"], z2.A_int["memb"]):
+                pairs.append([op_fn(a1_val, a2_val), min(a1_memb, a2_memb)])
+        return pairs
+
+    @staticmethod
+    def _merge_rows(rows: list[list[float]]) -> list[list[float]]:
+        """Merge rows sharing the same value: max membership, sum extra columns."""
+        merged: dict = {}
+        for row in rows:
+            key = row[0]
+            if key in merged:
+                merged[key][0] = max(merged[key][0], row[1])
+                for i, n in enumerate(row[2:]):
+                    merged[key][i + 1] += n
+            else:
+                merged[key] = row[1:]
+        return [[key] + merged[key] for key in merged]
+
+    @staticmethod
+    def _extract_trapezoid(rows: list[list[float]]) -> list[float]:
+        """Extract [a, b, c, d] trapezoidal corners from (value, membership) rows."""
         Q = np.empty(4)
 
-        Q[0] = min(matrix, key=lambda x: x[0])[0]
-        Q[3] = max(matrix, key=lambda x: x[0])[0]
+        Q[0] = min(rows, key=lambda x: x[0])[0]
+        Q[3] = max(rows, key=lambda x: x[0])[0]
 
-        matrix = list(filter(lambda x: round(x[1], _PRECISION) == 1, matrix))
+        core = list(filter(lambda x: round(x[1], _PRECISION) == 1, rows))
 
-        Q[1] = min(matrix, key=lambda x: x[0])[0]
-        Q[2] = max(matrix, key=lambda x: x[0])[0]
+        Q[1] = min(core, key=lambda x: x[0])[0]
+        Q[2] = max(core, key=lambda x: x[0])[0]
 
         return [round(i, _PRECISION) for i in Q]
 
-    @staticmethod
-    def get_matrix_main(number_z1: Znum, number_z2: Znum, operation: int) -> list:
-        """Build the combined operation matrix for two Z-numbers."""
-        matrix: list = []
-        matrix1 = number_z1.math.get_matrix()
-        matrix2 = number_z2.math.get_matrix()
-
-        for i, (a1_val, a1_memb) in enumerate(
-            zip(number_z1.A_int["value"], number_z1.A_int["memb"])
-        ):
-            for j, (a2_val, a2_memb) in enumerate(
-                zip(number_z2.A_int["value"], number_z2.A_int["memb"])
-            ):
-                row = [
-                    Math._operation_functions[operation](a1_val, a2_val),
-                    min(a1_memb, a2_memb),
-                ]
-                matrix.append(row + np.outer(matrix1[i], matrix2[j]).flatten().tolist())
-        return matrix
+    # ---- B computation: LP path ----
 
     @staticmethod
-    def get_minimized_matrix(matrix: list) -> list:
-        """Merge rows with identical first values, keeping max membership."""
-        minimized: dict = {}
-        for row in matrix:
-            if row[0] in minimized:
-                minimized[row[0]][0] = max(minimized[row[0]][0], row[1])
-                for i, n in enumerate(row[2:]):
-                    minimized[row[0]][i + 1] += n
-            else:
-                minimized[row[0]] = row[1:]
-        return [[key] + minimized[key] for key in minimized]
+    def _compute_b_columns(z1: Znum, z2: Znum) -> list[list[float]]:
+        """Build LP outer-product columns for all (i,j) A-intermediate pairs.
+
+        Calls get_matrix() (LP) on each Znum, then computes
+        outer(matrix1[i], matrix2[j]) for each pair.
+        """
+        matrix1 = z1.math.get_matrix()
+        matrix2 = z2.math.get_matrix()
+        columns = []
+        for i in range(len(z1.A_int["value"])):
+            for j in range(len(z2.A_int["value"])):
+                columns.append(np.outer(matrix1[i], matrix2[j]).flatten().tolist())
+        return columns
 
     @staticmethod
-    def get_prob_pos(matrix: list, number_z1: Znum, number_z2: Znum) -> list:
-        """Compute probability-possibility distribution for the result."""
-        matrix_by_column = list(zip(*matrix))
-        column1 = matrix_by_column[1]
-        matrix_by_column = matrix_by_column[2:]
+    def _compute_prob_pos(merged_rows: list[list[float]], z1: Znum, z2: Znum) -> list[list[float]]:
+        """Compute probability-possibility distribution for result B.
 
-        final_matrix = []
-        size1 = len(number_z1.B_int["memb"])
-        size2 = len(number_z2.B_int["memb"])
+        Uses col 1 (A memberships) as weights, cols 2+ as LP data.
+        """
+        cols_by_column = list(zip(*merged_rows))
+        memberships = cols_by_column[1]
+        b_columns = cols_by_column[2:]
 
-        for i, column in enumerate(matrix_by_column):
+        size1 = len(z1.B_int["memb"])
+        size2 = len(z2.B_int["memb"])
+
+        result = []
+        for i, column in enumerate(b_columns):
             row = [
-                sum([val * col for val, col in zip(column1, column)]),
-                min(
-                    number_z1.B_int["memb"][i // size1],
-                    number_z2.B_int["memb"][i % size2],
-                ),
+                sum(val * col for val, col in zip(memberships, column)),
+                min(z1.B_int["memb"][i // size1], z2.B_int["memb"][i % size2]),
             ]
-            final_matrix.append(row)
-        return final_matrix
+            result.append(row)
+        return result
 
     @staticmethod
-    def z_solver_main(number_z1: Znum, number_z2: Znum, operation: int) -> Znum:
-        """Perform a fuzzy arithmetic operation and return the resulting Z-number."""
+    def _compute_result_B_lp(a_pairs: list[list[float]], z1: Znum, z2: Znum) -> list[float]:
+        """Full LP-based B pipeline: LP matrices -> outer products -> prob_pos -> trapezoid."""
+        b_columns = Math._compute_b_columns(z1, z2)
+        combined = [pair + cols for pair, cols in zip(a_pairs, b_columns)]
+        merged = Math._merge_rows(combined)
+        prob_pos = Math._compute_prob_pos(merged, z1, z2)
+        return Math._extract_trapezoid(prob_pos)
+
+    # ---- B computation: fast path ----
+
+    @staticmethod
+    def _compute_result_B_fast(z1: Znum, z2: Znum) -> list[float]:
+        """Fast B: element-wise min(B1, B2). No LP."""
+        return np.minimum(z1.B, z2.B).tolist()
+
+    # ---- Public entry point ----
+
+    @staticmethod
+    def z_solver_main(
+        z1: Znum, z2: Znum, operation: int, *, fast_b: bool = False,
+    ) -> Znum:
+        """Perform fuzzy arithmetic on two Z-numbers.
+
+        Args:
+            z1: First Z-number operand.
+            z2: Second Z-number operand.
+            operation: The arithmetic operation (from Math.Operations).
+            fast_b: If True, B = min(B1, B2) element-wise (no LP).
+        """
         # Runtime import to avoid circular dependency: core.py -> math_ops.py -> core.py
         from znum.core import Znum
 
-        matrix = Math.get_matrix_main(number_z1, number_z2, operation)
-        matrix = Math.get_minimized_matrix(matrix)
-        A = Math.get_Q_from_matrix(matrix)
-        matrix = Math.get_prob_pos(matrix, number_z1, number_z2)
-        B = Math.get_Q_from_matrix(matrix)
+        fast_b = fast_b or getattr(_state, 'fast_b', False)
+
+        # Phase 1: A (no LP)
+        a_pairs = Math._compute_a_pairs(z1, z2, operation)
+        merged_a = Math._merge_rows(a_pairs)
+        A = Math._extract_trapezoid(merged_a)
+
+        # Phase 2: B
+        if fast_b:
+            B = Math._compute_result_B_fast(z1, z2)
+        else:
+            B = Math._compute_result_B_lp(a_pairs, z1, z2)
 
         return Znum(A, B)

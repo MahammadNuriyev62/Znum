@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import contextmanager
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from .math_ops import Math
+from .math_ops import Math, _state
 from .sort import Sort
 from .valid import Valid
 
@@ -139,6 +140,22 @@ class Znum:
             Znum(A=[5.0, 5.0, 5.0, 5.0], B=[1.0, 1.0, 1.0, 1.0])
         """
         return cls(A=[value] * 4, B=[1, 1, 1, 1])
+
+    @classmethod
+    @contextmanager
+    def fast(cls):
+        """Context manager for fast B computation (element-wise min, no LP).
+
+        Example:
+            >>> with Znum.fast():
+            ...     result = z1 + z2  # B = min(z1.B, z2.B), 19x faster
+        """
+        prev = getattr(_state, 'fast_b', False)
+        _state.fast_b = True
+        try:
+            yield
+        finally:
+            _state.fast_b = prev
 
     @staticmethod
     def get_default_A() -> NDArray[np.float64]:
