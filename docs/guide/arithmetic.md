@@ -29,14 +29,32 @@ z6 = z1 / z2    # Division
 
 ### How it works
 
-Arithmetic between two Z-numbers uses **linear programming** (via the [HiGHS](https://ergo-code.github.io/HiGHS/) solver) to compute the resulting fuzzy number while preserving membership constraints. The algorithm:
+The arithmetic pipeline has two independent phases:
 
-1. Builds intermediate representations of both operands
-2. Constructs an optimization matrix for all pairs of intermediate values
-3. Applies the arithmetic operation element-wise
-4. Extracts the resulting trapezoidal A and B values
+1. **A computation** (no LP): Cross-product of A intermediates, apply the operation, merge duplicates, extract trapezoidal corners. Pure arithmetic.
+2. **B computation** (LP): Solve linear programs (via [HiGHS](https://ergo-code.github.io/HiGHS/)) to build probability distributions, then derive the result B via probability-possibility transform.
 
-This is computationally more expensive than simple interval arithmetic but produces correct fuzzy results that respect the membership function shape.
+This produces correct fuzzy results that respect the membership function shape, but the LP step makes it slower than simple interval arithmetic.
+
+## Fast mode
+
+For performance-critical code, use `Znum.fast()` to skip the LP solver for B computation. Instead, B is computed as element-wise `min(B1, B2)` — the result is only as reliable as the least reliable input. **~19x faster.**
+
+```python
+with Znum.fast():
+    result = z1 + z2    # B = min(z1.B, z2.B), no LP
+    result = z1 * z2    # works for all operators
+    result = z1 + z2 + z3  # chained operations stay fast
+```
+
+All operators (`+`, `-`, `*`, `/`) are supported. A computation is identical in both modes — only B differs. Outside the `with` block, arithmetic returns to the default LP mode.
+
+**Key differences from LP mode:**
+
+- LP mode: B values reflect how uncertainty compounds through operations (B degrades over many chained operations)
+- Fast mode: B never goes below the minimum input B (stays stable through chains)
+
+Use fast mode when you need speed and a conservative lower bound on reliability is acceptable (e.g., in an optimizer evaluating thousands of candidate solutions).
 
 ## Scalar operations
 
