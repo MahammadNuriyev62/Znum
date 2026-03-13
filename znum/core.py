@@ -66,8 +66,30 @@ class Znum:
         self.left, self.right = left, right
         self.math = Math(self)
         self.valid = Valid(self)
-        self.A_int = A_int or self.math.get_intermediate(self._A, self._mu_A)
-        self.B_int = B_int or self.math.get_intermediate(self._B, self._mu_B)
+        self._A_int = A_int
+        self._B_int = B_int
+
+    @property
+    def A_int(self) -> dict:
+        """Intermediate representation of A (computed lazily)."""
+        if self._A_int is None:
+            self._A_int = self.math.get_intermediate(self._A, self._mu_A)
+        return self._A_int
+
+    @A_int.setter
+    def A_int(self, value: dict) -> None:
+        self._A_int = value
+
+    @property
+    def B_int(self) -> dict:
+        """Intermediate representation of B (computed lazily)."""
+        if self._B_int is None:
+            self._B_int = self.math.get_intermediate(self._B, self._mu_B)
+        return self._B_int
+
+    @B_int.setter
+    def B_int(self, value: dict) -> None:
+        self._B_int = value
 
     @property
     def A(self) -> NDArray[np.float64]:
