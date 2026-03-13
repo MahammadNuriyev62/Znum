@@ -5,6 +5,8 @@ A computation, B computation, and full tri_solve pipeline.
 """
 import numpy as np
 import pytest
+
+_trapz = getattr(np, 'trapezoid', None) or np.trapz
 from znum import Znum
 from znum.math_ops import Math
 from znum.tri_math import (
@@ -65,7 +67,7 @@ class TestExtTriPDF:
         beta, h = make_ext_tri_params(1, 2, 3, v=1.0)
         x = np.linspace(0, 4, 10000)
         pdf = eval_ext_tri_pdf(1, 2, 3, beta, h, x)
-        integral = np.trapz(pdf, x)
+        integral = _trapz(pdf, x)
         assert integral == pytest.approx(1.0, abs=1e-3)
 
     def test_integrates_to_1_v0(self):
@@ -73,7 +75,7 @@ class TestExtTriPDF:
         beta, h = make_ext_tri_params(1, 2, 3, v=0.0)
         x = np.linspace(0, 4, 10000)
         pdf = eval_ext_tri_pdf(1, 2, 3, beta, h, x)
-        integral = np.trapz(pdf, x)
+        integral = _trapz(pdf, x)
         assert integral == pytest.approx(1.0, abs=1e-3)
 
     def test_integrates_to_1_v05(self):
@@ -81,7 +83,7 @@ class TestExtTriPDF:
         beta, h = make_ext_tri_params(1, 2, 3, v=0.5)
         x = np.linspace(0, 4, 10000)
         pdf = eval_ext_tri_pdf(1, 2, 3, beta, h, x)
-        integral = np.trapz(pdf, x)
+        integral = _trapz(pdf, x)
         assert integral == pytest.approx(1.0, abs=1e-3)
 
     def test_integrates_to_1_various_v(self):
@@ -90,7 +92,7 @@ class TestExtTriPDF:
             beta, h = make_ext_tri_params(2, 5, 8, v)
             x = np.linspace(1, 9, 10000)
             pdf = eval_ext_tri_pdf(2, 5, 8, beta, h, x)
-            integral = np.trapz(pdf, x)
+            integral = _trapz(pdf, x)
             assert integral == pytest.approx(1.0, abs=1e-3), f"Failed for v={v}"
 
     def test_zero_outside_support(self):
@@ -291,7 +293,7 @@ class TestConvolution:
         z_grid, f = convolve_pdfs(1, 2, 3, 0.8, 4, 6, 8, 0.7,
                                   Math.Operations.ADDITION)
         dz = z_grid[1] - z_grid[0]
-        integral = np.trapz(f, dx=dz)
+        integral = _trapz(f, dx=dz)
         assert integral == pytest.approx(1.0, abs=0.05)
 
     def test_subtraction_support(self):
@@ -305,21 +307,21 @@ class TestConvolution:
         z_grid, f = convolve_pdfs(4, 6, 8, 0.8, 1, 2, 3, 0.7,
                                   Math.Operations.SUBTRACTION)
         dz = z_grid[1] - z_grid[0]
-        integral = np.trapz(f, dx=dz)
+        integral = _trapz(f, dx=dz)
         assert integral == pytest.approx(1.0, abs=0.05)
 
     def test_multiplication_integrates_near_1(self):
         z_grid, f = convolve_pdfs(1, 2, 3, 0.8, 4, 5, 6, 0.7,
                                   Math.Operations.MULTIPLICATION)
         dz = z_grid[1] - z_grid[0]
-        integral = np.trapz(f, dx=dz)
+        integral = _trapz(f, dx=dz)
         assert integral == pytest.approx(1.0, abs=0.1)
 
     def test_division_integrates_near_1(self):
         z_grid, f = convolve_pdfs(2, 4, 6, 0.8, 1, 2, 3, 0.7,
                                   Math.Operations.DIVISION)
         dz = z_grid[1] - z_grid[0]
-        integral = np.trapz(f, dx=dz)
+        integral = _trapz(f, dx=dz)
         assert integral == pytest.approx(1.0, abs=0.1)
 
     def test_nonnegative(self):

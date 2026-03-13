@@ -15,6 +15,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
 
+# numpy.trapz was removed in NumPy 2.0, replaced by numpy.trapezoid
+_trapz = getattr(np, 'trapezoid', None) or np.trapz
+
 if TYPE_CHECKING:
     from znum.core import Znum
 
@@ -191,7 +194,7 @@ def _convolve_addition(a1, m1, b1, beta1, h1,
     f1 = eval_ext_tri_pdf(a1, m1, b1, beta1, h1, t_grid)          # (n_t,)
     arg2 = z_grid[:, None] - t_grid[None, :]                       # (n_z, n_t)
     f2 = _eval_pdf_2d(a2, m2, b2, beta2, h2, arg2)                 # (n_z, n_t)
-    f_values = np.trapz(f1[None, :] * f2, dx=dt, axis=1)           # (n_z,)
+    f_values = _trapz(f1[None, :] * f2, dx=dt, axis=1)           # (n_z,)
     return z_grid, f_values
 
 
@@ -205,7 +208,7 @@ def _convolve_subtraction(a1, m1, b1, beta1, h1,
     f1 = eval_ext_tri_pdf(a1, m1, b1, beta1, h1, t_grid)
     arg2 = t_grid[None, :] - z_grid[:, None]                       # (n_z, n_t)
     f2 = _eval_pdf_2d(a2, m2, b2, beta2, h2, arg2)
-    f_values = np.trapz(f1[None, :] * f2, dx=dt, axis=1)
+    f_values = _trapz(f1[None, :] * f2, dx=dt, axis=1)
     return z_grid, f_values
 
 
@@ -225,7 +228,7 @@ def _convolve_multiplication(a1, m1, b1, beta1, h1,
     f2 = _eval_pdf_2d(a2, m2, b2, beta2, h2, arg2)
     integrand = f1[None, :] * f2 / np.abs(safe_t)[None, :]
     integrand[:, zero_mask] = 0.0
-    f_values = np.trapz(integrand, dx=dt, axis=1)
+    f_values = _trapz(integrand, dx=dt, axis=1)
     return z_grid, f_values
 
 
@@ -246,7 +249,7 @@ def _convolve_division(a1, m1, b1, beta1, h1,
     arg1 = z_grid[:, None] * t_grid[None, :]                       # (n_z, n_t)
     f1 = _eval_pdf_2d(a1, m1, b1, beta1, h1, arg1)
     integrand = f2[None, :] * f1 * np.abs(t_grid)[None, :]
-    f_values = np.trapz(integrand, dx=dt, axis=1)
+    f_values = _trapz(integrand, dx=dt, axis=1)
     return z_grid, f_values
 
 
@@ -316,7 +319,7 @@ def compute_base_value(A_result_tri: NDArray,
     a_r, m_r, b_r = float(A_result_tri[0]), float(A_result_tri[1]), float(A_result_tri[2])
     mu = _tri_membership(a_r, m_r, b_r, z_grid)
     dz = z_grid[1] - z_grid[0] if len(z_grid) > 1 else 1.0
-    val = float(np.trapz(mu * f_values, dx=dz))
+    val = float(_trapz(mu * f_values, dx=dz))
     return np.clip(val, 0.0, 1.0)
 
 
@@ -422,7 +425,7 @@ def _batched_convolve_and_base(
         integrand = integrand * np.abs(t_grid)[None, None, :]
 
     # Single batched trapz: (3, n_z, n_t) → (3, n_z)
-    f_all = np.trapz(integrand, dx=dt, axis=2)
+    f_all = _trapz(integrand, dx=dt, axis=2)
 
     # Compute base values: v₁₂ = ∫ μ_A_result(x) · f₁₂(x) dx
     a_r, m_r, b_r = float(A_result_tri[0]), float(A_result_tri[1]), float(A_result_tri[2])
@@ -430,7 +433,7 @@ def _batched_convolve_and_base(
     dz = z_grid[1] - z_grid[0] if len(z_grid) > 1 else 1.0
 
     # (3, n_z) * (n_z,) → trapz → (3,)
-    result_b = np.trapz(f_all * mu[None, :], dx=dz, axis=1)
+    result_b = _trapz(f_all * mu[None, :], dx=dz, axis=1)
     result_b[skip] = 0.0
     return np.clip(result_b, 0.0, 1.0)
 
