@@ -141,21 +141,44 @@ class Znum:
         """
         return cls(A=[value] * 4, B=[1, 1, 1, 1])
 
+    @property
+    def is_triangular(self) -> bool:
+        """Whether both A and B are triangular (inner points equal)."""
+        return (len(self._A) == 4 and self._A[1] == self._A[2]
+                and len(self._B) == 4 and self._B[1] == self._B[2])
+
+    @property
+    def A_tri(self) -> NDArray[np.float64] | None:
+        """A as triangular (a, m, b), or None if not triangular."""
+        if len(self._A) == 4 and self._A[1] == self._A[2]:
+            return np.array([self._A[0], self._A[1], self._A[3]])
+        return None
+
+    @property
+    def B_tri(self) -> NDArray[np.float64] | None:
+        """B as triangular (a, m, b), or None if not triangular."""
+        if len(self._B) == 4 and self._B[1] == self._B[2]:
+            return np.array([self._B[0], self._B[1], self._B[3]])
+        return None
+
     @classmethod
     @contextmanager
     def fast(cls):
-        """Context manager for fast B computation (element-wise min, no LP).
+        """Context manager for fast analytical computation (Li et al. 2023).
+
+        When active, triangular Z-numbers use analytical extended triangular
+        distribution instead of LP. Non-triangular Z-numbers fall back to LP.
 
         Example:
             >>> with Znum.fast():
-            ...     result = z1 + z2  # B = min(z1.B, z2.B), 19x faster
+            ...     result = z1 + z2  # analytical if both triangular
         """
-        prev = getattr(_state, 'fast_b', False)
-        _state.fast_b = True
+        prev = getattr(_state, 'fast', False)
+        _state.fast = True
         try:
             yield
         finally:
-            _state.fast_b = prev
+            _state.fast = prev
 
     @staticmethod
     def get_default_A() -> NDArray[np.float64]:

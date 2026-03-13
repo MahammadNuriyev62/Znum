@@ -1,16 +1,15 @@
 """Fuzzy arithmetic operations for Z-numbers.
 
-The arithmetic pipeline has two independent phases:
+The arithmetic pipeline:
 
 1. **A computation** (LP-free): Cross-product of A intermediates, apply the
    arithmetic operation, merge duplicates, extract trapezoidal corners.
 
 2. **B computation**: Two modes:
-   - **LP mode** (default): Solve linear programs to build probability
-     distributions, then derive the result B via probability-possibility
-     transform.
-   - **Fast mode** (`fast_b=True`): Element-wise min(B1, B2) — the result
-     is only as reliable as the least reliable input. No LP needed.
+   - **LP mode** (default): Linear programming via HiGHS to build probability
+     distributions, then derive result B via probability-possibility transform.
+   - **Analytical mode** (Znum.fast(), triangular only): Li et al. 2023 extended
+     triangular distribution — no LP, no B inflation.
 """
 from __future__ import annotations
 
@@ -74,9 +73,20 @@ class Math:
         ])
         return {"value": Q_int_value, "memb": Q_int_memb}
 
-    # ---- LP matrix (used by B computation and dist.py) ----
+    # ---- Probability distribution matrix ----
 
     def get_matrix(self) -> np.ndarray:
+        """Build probability distribution matrix.
+
+        With Znum.fast() active and triangular input: analytical (Li et al. 2023).
+        Otherwise: LP via HiGHS.
+        """
+        if getattr(_state, 'fast', False) and self.root.is_triangular:
+            from znum.tri_math import analytical_matrix
+            return analytical_matrix(self.root)
+        return self._get_matrix_lp()
+
+    def _get_matrix_lp(self) -> np.ndarray:
         """Build optimization matrix via linear programming for each B intermediate value.
 
         Builds the HiGHS model once, then re-solves for each B intermediate
@@ -227,41 +237,31 @@ class Math:
         prob_pos = Math._compute_prob_pos(merged, z1, z2)
         return Math._extract_trapezoid(prob_pos)
 
-    # ---- B computation: fast path ----
-
-    @staticmethod
-    def _compute_result_B_fast(z1: Znum, z2: Znum) -> list[float]:
-        """Fast B: element-wise min(B1, B2). No LP."""
-        return np.minimum(z1.B, z2.B).tolist()
-
     # ---- Public entry point ----
 
     @staticmethod
-    def z_solver_main(
-        z1: Znum, z2: Znum, operation: int, *, fast_b: bool = False,
-    ) -> Znum:
+    def z_solver_main(z1: Znum, z2: Znum, operation: int) -> Znum:
         """Perform fuzzy arithmetic on two Z-numbers.
 
         Args:
             z1: First Z-number operand.
             z2: Second Z-number operand.
             operation: The arithmetic operation (from Math.Operations).
-            fast_b: If True, B = min(B1, B2) element-wise (no LP).
         """
         # Runtime import to avoid circular dependency: core.py -> math_ops.py -> core.py
         from znum.core import Znum
 
-        fast_b = fast_b or getattr(_state, 'fast_b', False)
+        fast = getattr(_state, 'fast', False)
 
-        # Phase 1: A (no LP)
+        # Fast analytical path for triangular Z-numbers (Li et al. 2023)
+        if fast and z1.is_triangular and z2.is_triangular:
+            from znum.tri_math import tri_solve
+            return tri_solve(z1, z2, operation)
+
+        # LP path (default, or non-triangular fallback)
         a_pairs = Math._compute_a_pairs(z1, z2, operation)
         merged_a = Math._merge_rows(a_pairs)
         A = Math._extract_trapezoid(merged_a)
-
-        # Phase 2: B
-        if fast_b:
-            B = Math._compute_result_B_fast(z1, z2)
-        else:
-            B = Math._compute_result_B_lp(a_pairs, z1, z2)
+        B = Math._compute_result_B_lp(a_pairs, z1, z2)
 
         return Znum(A, B)
