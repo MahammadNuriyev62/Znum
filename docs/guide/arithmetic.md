@@ -36,25 +36,29 @@ The arithmetic pipeline has two independent phases:
 
 This produces correct fuzzy results that respect the membership function shape, but the LP step makes it slower than simple interval arithmetic.
 
-## Fast mode
+## Fast mode (Li et al. 2023)
 
-For performance-critical code, use `Znum.fast()` to skip the LP solver for B computation. Instead, B is computed as element-wise `min(B1, B2)` — the result is only as reliable as the least reliable input. **~19x faster.**
+For performance-critical code, use `Znum.fast()` to switch B computation from LP to an analytical method based on extended triangular distributions ([Li et al. 2023](https://doi.org/10.1016/j.ins.2023.119477)). **~5x faster**, deterministic, and produces narrower B spread than LP.
+
+Requires **triangular** Z-numbers (where `A[1] == A[2]` and `B[1] == B[2]`). Non-triangular Z-numbers automatically fall back to LP inside the `fast()` block.
 
 ```python
+# Triangular Z-numbers: use [a, m, m, b] form
+z1 = Znum(A=[1, 2, 2, 3], B=[0.7, 0.8, 0.8, 0.9])
+z2 = Znum(A=[7, 8, 8, 9], B=[0.4, 0.5, 0.5, 0.6])
+
 with Znum.fast():
-    result = z1 + z2    # B = min(z1.B, z2.B), no LP
+    result = z1 + z2    # analytical, no LP
     result = z1 * z2    # works for all operators
     result = z1 + z2 + z3  # chained operations stay fast
 ```
 
-All operators (`+`, `-`, `*`, `/`) are supported. A computation is identical in both modes — only B differs. Outside the `with` block, arithmetic returns to the default LP mode.
+All operators (`+`, `-`, `*`, `/`) are supported. A computation is identical in both modes. Outside the `with` block, arithmetic returns to the default LP mode.
 
 **Key differences from LP mode:**
 
-- LP mode: B values reflect how uncertainty compounds through operations (B degrades over many chained operations)
-- Fast mode: B never goes below the minimum input B (stays stable through chains)
-
-Use fast mode when you need speed and a conservative lower bound on reliability is acceptable (e.g., in an optimizer evaluating thousands of candidate solutions).
+- LP mode: B is derived via probability-possibility transform using linear programming (works for any trapezoidal shape)
+- Fast mode: B is computed analytically using extended triangular distribution convolutions (triangular only, narrower B spread for high-B inputs)
 
 ## Scalar operations
 

@@ -26,6 +26,7 @@ Znum(
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `Znum.crisp(value)` | `Znum` | Crisp Z-number: `A=(v,v,v,v)`, `B=(1,1,1,1)` |
+| `Znum.fast()` | context manager | Analytical mode for triangular Z-numbers (Li et al. 2023). Non-triangular falls back to LP. |
 
 ### Properties
 
@@ -38,7 +39,10 @@ Znum(
 | `dimension` | `int` | Number of corner points |
 | `is_trapezoid` | `bool` | True if 4 corner points |
 | `is_triangle` | `bool` | True if `A[1] == A[-2]` |
+| `is_triangular` | `bool` | True if both A and B are triangular (`A[1] == A[2]` and `B[1] == B[2]`) |
 | `is_even` | `bool` | True if even number of points |
+| `A_tri` | `ndarray \| None` | A as `[a, m, b]` triangle, or None if A is not triangular |
+| `B_tri` | `ndarray \| None` | B as `[a, m, b]` triangle, or None if B is not triangular |
 
 ### Operators
 

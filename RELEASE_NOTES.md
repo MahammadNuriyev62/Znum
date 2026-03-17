@@ -1,3 +1,27 @@
+# Znum 4.0.0
+
+## Li et al. analytical engine
+
+- **`Znum.fast()` now uses Li et al. 2023 analytical method** — For triangular Z-numbers, B computation uses extended triangular distribution convolutions instead of LP. ~5x faster, deterministic, and produces narrower B spread than LP for high-B inputs. Non-triangular Z-numbers fall back to LP automatically.
+- **New module `tri_math.py`** — Implements the full analytical pipeline: extended triangular PDF, convolution, and closed-form B computation.
+- **New properties** — `is_triangular`, `A_tri`, `B_tri` for detecting and decomposing triangular Z-numbers.
+- **Removed old fast_b mode** — The v3 `B = min(B1, B2)` heuristic is replaced by the analytically grounded Li et al. method. `test_fast_b.py` deleted, replaced by `test_tri_analytical.py` (68 tests).
+
+### Reference
+
+Li, Y. et al. (2023). The arithmetic of triangular Z-numbers with reduced calculation complexity using an extension of triangular distribution. *Information Sciences*, 647, 119477. [doi:10.1016/j.ins.2023.119477](https://doi.org/10.1016/j.ins.2023.119477)
+
+---
+
+# Znum 3.0.0
+
+## Refactored arithmetic pipeline
+
+- **Separated A and B computation** — `math_ops.py` rewritten with clear phases: `_compute_a_pairs`, `_merge_rows`, `_extract_trapezoid` for A; `_compute_b_columns`, `_compute_prob_pos`, `_compute_result_B_lp` for B. Old internal methods (`get_matrix_main`, `get_minimized_matrix`, `get_Q_from_matrix`, `get_prob_pos`) removed.
+- **Added `Znum.fast()` context manager** — Thread-safe opt-in for fast B computation via `threading.local()`. Supports nesting and exception safety.
+
+---
+
 # Znum 2.1.0
 
 ## Performance
