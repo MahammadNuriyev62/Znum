@@ -44,4 +44,9 @@ print(five + ten)  # Znum(A=[15.0, 15.0, 15.0, 15.0], B=[1.0, 1.0, 1.0, 1.0])
 
 - Python >= 3.10
 - NumPy >= 1.24
-- SciPy >= 1.10
+- highspy >= 1.7.0
+
+## References
+
+- Zadeh, L.A. (2011). A Note on Z-numbers. *Information Sciences*, 181(14), 2923–2932. [doi:10.1016/j.ins.2011.02.022](https://doi.org/10.1016/j.ins.2011.02.022)
+- Li, Y., Herrera-Viedma, E., Pérez, I.J. et al. (2023). The arithmetic of triangular Z-numbers with reduced calculation complexity using an extension of triangular distribution. *Information Sciences*, 647, 119477. [doi:10.1016/j.ins.2023.119477](https://doi.org/10.1016/j.ins.2023.119477)
