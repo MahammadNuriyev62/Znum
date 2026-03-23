@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
 
+from znum.math_ops import _state
+
 # numpy.trapz was removed in NumPy 2.0, replaced by numpy.trapezoid
 _trapz = getattr(np, 'trapezoid', None) or np.trapz
 
@@ -454,6 +456,10 @@ def compute_B_tri(A1_tri: NDArray, B1_tri: NDArray,
     Returns:
         Triangular B result as [b_L, b_M, b_R].
     """
+    # min_b mode: B = min(B1, B2), no convolution (Aliev et al. 2017)
+    if getattr(_state, 'min_b', False):
+        return np.minimum(B1_tri, B2_tri)
+
     a1, m1, b1 = float(A1_tri[0]), float(A1_tri[1]), float(A1_tri[2])
     a2, m2, b2 = float(A2_tri[0]), float(A2_tri[1]), float(A2_tri[2])
 

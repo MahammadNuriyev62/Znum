@@ -231,6 +231,9 @@ class Math:
     @staticmethod
     def _compute_result_B_lp(a_pairs: list[list[float]], z1: Znum, z2: Znum) -> list[float]:
         """Full LP-based B pipeline: LP matrices -> outer products -> prob_pos -> trapezoid."""
+        # min_b mode: B = min(B1, B2), no LP (Aliev et al. 2017)
+        if getattr(_state, 'min_b', False):
+            return [min(b1, b2) for b1, b2 in zip(z1.B, z2.B)]
         b_columns = Math._compute_b_columns(z1, z2)
         combined = [pair + cols for pair, cols in zip(a_pairs, b_columns)]
         merged = Math._merge_rows(combined)

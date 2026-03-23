@@ -185,22 +185,33 @@ class Znum:
 
     @classmethod
     @contextmanager
-    def fast(cls):
+    def fast(cls, min_b: bool = False):
         """Context manager for fast analytical computation (Li et al. 2023).
 
         When active, triangular Z-numbers use analytical extended triangular
         distribution instead of LP. Non-triangular Z-numbers fall back to LP.
 
+        Args:
+            min_b: When True, arithmetic operations use min(B1, B2)
+                element-wise instead of convolution/LP-based B computation.
+                Prevents B reliability degradation through repeated operations
+                (see Aliev et al. 2017, "A sum of a large number of Z-numbers").
+
         Example:
             >>> with Znum.fast():
             ...     result = z1 + z2  # analytical if both triangular
+            >>> with Znum.fast(min_b=True):
+            ...     result = z1 + z2  # B = min(B1, B2), no degradation
         """
-        prev = getattr(_state, 'fast', False)
+        prev_fast = getattr(_state, 'fast', False)
+        prev_min_b = getattr(_state, 'min_b', False)
         _state.fast = True
+        _state.min_b = min_b
         try:
             yield
         finally:
-            _state.fast = prev
+            _state.fast = prev_fast
+            _state.min_b = prev_min_b
 
     @staticmethod
     def get_default_A() -> NDArray[np.float64]:
