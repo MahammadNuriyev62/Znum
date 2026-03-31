@@ -3,10 +3,17 @@
 Compares two Z-numbers by computing dominance degrees through normalized
 intermediate representations and possibility measures over three fuzzy
 linguistic categories: better (nbF), equal (neF), and worse (nwF).
+
+The final score combines A (restriction) and B (reliability) NxF values
+with configurable weighting via Znum.config(sort_a_weight=...). Default
+is equal weighting (0.5). Higher sort_a_weight makes the actual value
+dominate over reliability in comparisons.
 """
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
+from .math_ops import _state
 
 if TYPE_CHECKING:
     from znum.core import Znum
@@ -126,9 +133,22 @@ class Sort:
 
     @staticmethod
     def _final_score(nxf_values: dict[str, dict[str, float]]) -> float:
-        """Combine A and B NxF values into a single dominance score."""
+        """Combine A and B NxF values into a single dominance score.
+
+        Uses sort_a_weight from Znum.config() to weight A vs B.
+        Default 0.5 gives equal weighting (original behavior).
+
+        The formula normalizes to [0, 2] scale regardless of weights,
+        so the threshold logic works consistently.
+        """
+        w_a = getattr(_state, 'sort_a_weight', 0.5)
+        w_b = 1.0 - w_a
+        a_vals = list(nxf_values["A"].values())
+        b_vals = list(nxf_values["B"].values())
+        # Scale to [0, 2] range (same as original unweighted sum)
+        scale = 2.0
         nxf_sum = tuple(
-            (a + b) for a, b in zip(*(q.values() for q in nxf_values.values()))
+            (w_a * a + w_b * b) * scale for a, b in zip(a_vals, b_vals)
         )
         nb, ne = nxf_sum[:2]
         if nb == 0 or (2 - ne) / 2 >= nb:

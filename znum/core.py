@@ -185,33 +185,53 @@ class Znum:
 
     @classmethod
     @contextmanager
-    def fast(cls, min_b: bool = False):
-        """Context manager for fast analytical computation (Li et al. 2023).
-
-        When active, triangular Z-numbers use analytical extended triangular
-        distribution instead of LP. Non-triangular Z-numbers fall back to LP.
+    def config(cls, fast_triangle: bool = False, min_b: bool = False,
+               sort_a_weight: float = 0.5):
+        """Context manager for Z-number computation configuration.
 
         Args:
+            fast_triangle: When True, triangular Z-numbers use analytical
+                extended triangular distribution (Li et al. 2023) instead
+                of LP. Non-triangular Z-numbers fall back to LP.
             min_b: When True, arithmetic operations use min(B1, B2)
                 element-wise instead of convolution/LP-based B computation.
                 Prevents B reliability degradation through repeated operations
                 (see Aliev et al. 2017, "A sum of a large number of Z-numbers").
+            sort_a_weight: Weight for the A (restriction) component in
+                Sort.solver_main ranking, in [0, 1]. The B (reliability)
+                component gets weight (1 - sort_a_weight). Default 0.5
+                (equal weighting). Higher values make the actual value
+                dominate over reliability in comparisons.
 
         Example:
-            >>> with Znum.fast():
-            ...     result = z1 + z2  # analytical if both triangular
-            >>> with Znum.fast(min_b=True):
-            ...     result = z1 + z2  # B = min(B1, B2), no degradation
+            >>> with Znum.config(fast_triangle=True, min_b=True, sort_a_weight=0.7):
+            ...     result = z1 + z2  # fast + min_b
+            ...     z1 > z2           # A weighted 0.7, B weighted 0.3
         """
         prev_fast = getattr(_state, 'fast', False)
         prev_min_b = getattr(_state, 'min_b', False)
-        _state.fast = True
+        prev_sort_a_weight = getattr(_state, 'sort_a_weight', 0.5)
+        _state.fast = fast_triangle
         _state.min_b = min_b
+        _state.sort_a_weight = sort_a_weight
         try:
             yield
         finally:
             _state.fast = prev_fast
             _state.min_b = prev_min_b
+            _state.sort_a_weight = prev_sort_a_weight
+
+    @classmethod
+    @contextmanager
+    def fast(cls, min_b: bool = False):
+        """Convenience alias for config(fast_triangle=True, min_b=...).
+
+        Example:
+            >>> with Znum.fast(min_b=True):
+            ...     result = z1 + z2  # B = min(B1, B2), no degradation
+        """
+        with cls.config(fast_triangle=True, min_b=min_b):
+            yield
 
     @staticmethod
     def get_default_A() -> NDArray[np.float64]:
