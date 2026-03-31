@@ -1,3 +1,33 @@
+# Znum 4.3.0
+
+## Configurable comparison weighting + Znum.config()
+
+- **`Znum.config()` context manager** — Unified configuration for Z-number computation. Replaces `Znum.fast()` as the primary configuration entry point. Accepts `fast_triangle`, `min_b`, and the new `sort_a_weight` parameter.
+- **`sort_a_weight` parameter** — Controls how much the A (restriction/value) component weighs against B (reliability) in `Sort.solver_main` comparisons. Default `0.5` preserves the original equal weighting. Higher values (e.g., `0.7`) make the actual value dominate, preventing B mismatches from masking real value differences in constraint checks.
+- **`Znum.fast()` preserved** — Now a convenience alias for `Znum.config(fast_triangle=True, ...)`. Fully backward compatible.
+
+### Motivation
+
+When comparing Z-numbers with mismatched B values (e.g., a summed total with degraded B vs a crisp limit with B=1.0), the original equal weighting allowed B differences to override clear A differences. A value 33 minutes over a time budget could be ranked as "smaller" simply because its B was lower. `sort_a_weight=0.7` fixes this by weighting A at 70%, ensuring that actual value dominance is preserved while B still contributes to the comparison.
+
+### Example
+
+```python
+with Znum.config(fast_triangle=True, min_b=True, sort_a_weight=0.7):
+    result = z1 + z2        # fast analytical + min_b
+    is_over = total > limit  # A weighted 70%, B weighted 30%
+```
+
+---
+
+# Znum 4.2.0
+
+## min_b option for Znum.fast()
+
+- **`min_b` parameter on `Znum.fast()`** — When `min_b=True`, arithmetic operations use `min(B1, B2)` element-wise instead of convolution/LP-based B computation. Prevents B reliability degradation through repeated operations (Aliev et al. 2017).
+
+---
+
 # Znum 4.0.0
 
 ## Li et al. analytical engine

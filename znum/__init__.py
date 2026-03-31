@@ -25,7 +25,7 @@ from .exceptions import (
     ZnumsMustBeInSameDimensionException,
 )
 
-__version__ = "4.1.0"
+__version__ = "4.3.0"
 
 __all__ = [
     "Znum",

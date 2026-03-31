@@ -26,7 +26,8 @@ Znum(
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `Znum.crisp(value)` | `Znum` | Crisp Z-number: `A=(v,v,v,v)`, `B=(1,1,1,1)` |
-| `Znum.fast()` | context manager | Analytical mode for triangular Z-numbers (Li et al. 2023). Non-triangular falls back to LP. |
+| `Znum.config(...)` | context manager | Configure Z-number computation: `fast_triangle`, `min_b`, `sort_a_weight`. |
+| `Znum.fast(min_b=False)` | context manager | Convenience alias for `Znum.config(fast_triangle=True, min_b=...)`. |
 
 ### Properties
 
@@ -75,6 +76,26 @@ Znum(
 |--------|---------|-------------|
 | `get_default_A()` | `ndarray` | `[1, 2, 3, 4]` |
 | `get_default_B()` | `ndarray` | `[0.1, 0.2, 0.3, 0.4]` |
+
+### Znum.config()
+
+```python
+with Znum.config(fast_triangle=False, min_b=False, sort_a_weight=0.5):
+    ...
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `fast_triangle` | `bool` | `False` | Use Li et al. 2023 analytical engine for triangular Z-numbers |
+| `min_b` | `bool` | `False` | Use `min(B1, B2)` element-wise instead of convolution for B |
+| `sort_a_weight` | `float` | `0.5` | Weight for A in `Sort.solver_main`. B gets `1 - sort_a_weight`. Higher values make value (A) dominate over reliability (B) in comparisons |
+
+Context manager that configures Z-number computation for all operations
+within its scope. Thread-safe (uses `threading.local`). Supports nesting;
+inner contexts restore the outer context's settings on exit.
+
+`Znum.fast(min_b=False)` is a convenience alias for
+`Znum.config(fast_triangle=True, min_b=...)`.
 
 ---
 
